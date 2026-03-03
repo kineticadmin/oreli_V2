@@ -4,55 +4,55 @@
 
 @layer base {
   :root {
-    /* Oreli "Warm Energy" Design System */
-    --background: 30 100% 97%; /* cream #FFF8F0 */
-    --foreground: 261 48% 20%; /* deep-plum #2D1B4E */
+    /* Clean Minimal Design System — inspired by premium furniture apps */
+    --background: 0 0% 100%; /* pure white */
+    --foreground: 0 0% 8%; /* near-black #141414 */
 
-    --card: 30 100% 98%; /* warm-white #FFFCF7 */
-    --card-foreground: 261 48% 20%;
+    --card: 0 0% 100%; /* white */
+    --card-foreground: 0 0% 8%;
 
-    --popover: 30 100% 98%;
-    --popover-foreground: 261 48% 20%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 8%;
 
-    --primary: 0 100% 70%; /* coral #FF6B6B */
-    --primary-foreground: 0 0% 100%;
+    --primary: 0 0% 8%; /* near-black — primary actions */
+    --primary-foreground: 0 0% 100%; /* white */
 
-    --secondary: 24 100% 63%; /* sunset-orange #FF8C42 */
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 30 15% 95%; /* warm off-white */
+    --secondary-foreground: 0 0% 8%;
 
-    --muted: 0 100% 93%; /* blush-pink #FFE5E5 */
-    --muted-foreground: 261 20% 45%;
+    --muted: 30 10% 96%; /* very light warm gray */
+    --muted-foreground: 0 0% 45%; /* medium gray */
 
-    --accent: 257 55% 78%; /* soft-lavender #B8A9E8 */
-    --accent-foreground: 0 0% 100%;
+    --accent: 30 20% 93%; /* warm sand */
+    --accent-foreground: 0 0% 8%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 30% 90%;
-    --input: 30 50% 92%;
-    --ring: 0 100% 70%;
+    --border: 0 0% 92%;
+    --input: 0 0% 94%;
+    --ring: 0 0% 8%;
 
     --radius: 0.75rem;
 
-    /* Extended Oreli tokens */
-    --golden-honey: 39 100% 60%; /* #FFB830 */
-    --deep-plum: 261 48% 20%; /* #2D1B4E */
-    --midnight: 255 40% 14%; /* #1A1035 */
-    --mint-fresh: 153 48% 61%; /* #6BCFA0 */
-    --sky-blue: 213 88% 68%; /* #64B5F6 */
-    --blush-pink: 0 100% 93%; /* #FFE5E5 */
-    --cream: 30 100% 97%; /* #FFF8F0 */
-    --warm-white: 30 100% 98%; /* #FFFCF7 */
+    /* Extended tokens */
+    --golden-honey: 39 80% 55%;
+    --deep-plum: 0 0% 8%;
+    --midnight: 0 0% 4%;
+    --mint-fresh: 153 40% 50%;
+    --sky-blue: 213 70% 58%;
+    --blush-pink: 0 30% 95%;
+    --cream: 30 15% 97%;
+    --warm-white: 30 10% 99%;
 
-    --sidebar-background: 30 100% 97%;
-    --sidebar-foreground: 261 48% 20%;
-    --sidebar-primary: 0 100% 70%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 8%;
+    --sidebar-primary: 0 0% 8%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 257 55% 78%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 30% 90%;
-    --sidebar-ring: 0 100% 70%;
+    --sidebar-accent: 30 20% 93%;
+    --sidebar-accent-foreground: 0 0% 8%;
+    --sidebar-border: 0 0% 92%;
+    --sidebar-ring: 0 0% 8%;
   }
 }
 
@@ -69,42 +69,43 @@
   }
 
   h1, h2, .font-display {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
   }
 }
 
 @layer utilities {
-  /* Gradients */
+  /* Gradients — minimal, mostly solid */
   .gradient-primary {
-    background: linear-gradient(135deg, hsl(0 100% 70%), hsl(24 100% 63%));
+    background: hsl(0 0% 8%);
   }
   .gradient-magic {
-    background: linear-gradient(135deg, hsl(257 55% 78%), hsl(0 100% 70%));
+    background: linear-gradient(135deg, hsl(0 0% 15%), hsl(0 0% 8%));
   }
   .gradient-celebration {
-    background: linear-gradient(135deg, hsl(39 100% 60%), hsl(24 100% 63%));
+    background: linear-gradient(135deg, hsl(39 80% 55%), hsl(30 70% 50%));
   }
   .gradient-dark {
-    background: linear-gradient(180deg, hsl(255 40% 14%), hsl(261 48% 20%));
+    background: linear-gradient(180deg, hsl(0 0% 4%), hsl(0 0% 10%));
   }
 
-  /* Shadows with plum tint */
+  /* Clean shadows */
   .shadow-card {
-    box-shadow: 0 4px 20px hsla(261, 48%, 20%, 0.08);
+    box-shadow: 0 2px 16px hsla(0, 0%, 0%, 0.06);
   }
   .shadow-card-hover {
-    box-shadow: 0 8px 32px hsla(261, 48%, 20%, 0.15);
+    box-shadow: 0 8px 30px hsla(0, 0%, 0%, 0.1);
   }
   .shadow-modal {
-    box-shadow: 0 -8px 40px hsla(255, 40%, 14%, 0.20);
+    box-shadow: 0 -4px 30px hsla(0, 0%, 0%, 0.08);
   }
 
-  /* Oreli specific utilities */
+  /* Utility classes */
   .text-plum {
-    color: hsl(261 48% 20%);
+    color: hsl(0 0% 8%);
   }
   .bg-cream {
-    background-color: hsl(30 100% 97%);
+    background-color: hsl(30 15% 97%);
   }
 
   /* Mobile app container */
@@ -118,7 +119,7 @@
     100% { background-position: 200% 0; }
   }
   .animate-shimmer {
-    background: linear-gradient(90deg, hsl(30 100% 97%) 25%, hsl(0 100% 93%) 50%, hsl(30 100% 97%) 75%);
+    background: linear-gradient(90deg, hsl(0 0% 96%) 25%, hsl(0 0% 90%) 50%, hsl(0 0% 96%) 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s ease-in-out infinite;
   }
