@@ -1,0 +1,159 @@
+import React, { useState } from 'react';
+import {
+    View,
+    Text,
+    StyleSheet,
+    ScrollView,
+    TouchableOpacity,
+    TextInput,
+    Alert,
+} from 'react-native';
+import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useThemeColors } from '@/constants/Colors';
+import { Typography, Spacing, Radius } from '@/constants/Typography';
+
+const RELATIONSHIPS = ['Maman', 'Papa', 'Partenaire', 'Meilleure amie', 'Meilleur ami', 'Frère', 'Sœur', 'Collègue', 'Ami(e)'];
+const TASTES = ['🍷 Gastronomie', '🏋 Sport', '🎨 Art', '📚 Lecture', '🌿 Nature', '✈️ Voyage', '🎮 Gaming', '🎵 Musique', '💄 Beauté', '🍳 Cuisine'];
+
+export default function AddCloseOneScreen() {
+  const Colors = useThemeColors();
+  const styles = createStyles(Colors);
+    const insets = useSafeAreaInsets();
+    const [name, setName] = useState('');
+    const [relationship, setRelationship] = useState('');
+    const [birthday, setBirthday] = useState('');
+    const [selectedTastes, setSelectedTastes] = useState<string[]>([]);
+
+    const canSave = name.trim().length > 0 && relationship.length > 0;
+
+    const toggleTaste = (taste: string) => {
+        setSelectedTastes((prev) =>
+            prev.includes(taste) ? prev.filter((t) => t !== taste) : [...prev, taste]
+        );
+    };
+
+    const handleSave = () => {
+        Alert.alert('Proche ajouté', `${name} a été ajouté à tes proches !`, [
+            { text: 'OK', onPress: () => router.back() }
+        ]);
+    };
+
+    return (
+        <View style={[styles.container, { backgroundColor: Colors.obsidian }]}>
+            {/* Header */}
+            <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn}>
+                    <Text style={styles.closeBtnText}>✕</Text>
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Ajouter un proche</Text>
+                <View style={{ width: 40 }} />
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+                {/* Name */}
+                <View style={styles.section}>
+                    <Text style={styles.fieldLabel}>Prénom *</Text>
+                    <TextInput
+                        value={name}
+                        onChangeText={setName}
+                        placeholder="ex : Sophie"
+                        placeholderTextColor={Colors.muted}
+                        style={styles.input}
+                    />
+                </View>
+
+                {/* Relationship */}
+                <View style={styles.section}>
+                    <Text style={styles.fieldLabel}>Relation *</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        <View style={styles.pillRow}>
+                            {RELATIONSHIPS.map((r) => (
+                                <TouchableOpacity
+                                    key={r}
+                                    style={[styles.pill, relationship === r && styles.pillActive]}
+                                    onPress={() => setRelationship(r)}
+                                    activeOpacity={0.75}
+                                >
+                                    <Text style={[styles.pillText, relationship === r && styles.pillTextActive]}>
+                                        {r}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </ScrollView>
+                </View>
+
+                {/* Birthday */}
+                <View style={styles.section}>
+                    <Text style={styles.fieldLabel}>Date d'anniversaire</Text>
+                    <TextInput
+                        value={birthday}
+                        onChangeText={setBirthday}
+                        placeholder="ex : 15/03/1990"
+                        placeholderTextColor={Colors.muted}
+                        style={styles.input}
+                        keyboardType="numbers-and-punctuation"
+                    />
+                </View>
+
+                {/* Tastes */}
+                <View style={styles.section}>
+                    <Text style={styles.fieldLabel}>Centres d'intérêt</Text>
+                    <View style={styles.tastesGrid}>
+                        {TASTES.map((t) => (
+                            <TouchableOpacity
+                                key={t}
+                                style={[styles.tasteBtn, selectedTastes.includes(t) && styles.tasteBtnActive]}
+                                onPress={() => toggleTaste(t)}
+                                activeOpacity={0.75}
+                            >
+                                <Text style={[styles.tasteBtnText, selectedTastes.includes(t) && styles.tasteBtnTextActive]}>{t}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
+            </ScrollView>
+
+            {/* Save CTA */}
+            <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
+                <TouchableOpacity
+                    style={[styles.saveBtn, !canSave && styles.saveBtnDisabled]}
+                    onPress={handleSave}
+                    disabled={!canSave}
+                    activeOpacity={0.85}
+                >
+                    <Text style={[styles.saveBtnText, !canSave && styles.saveBtnTextDisabled]}>
+                        Enregistrer {name || ''}
+                    </Text>
+                </TouchableOpacity>
+            </View>
+        </View>
+    );
+}
+
+const createStyles = (Colors: any) => StyleSheet.create({
+    container: { flex: 1 },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.xl, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: Colors.warm, marginBottom: 8 },
+    closeBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+    closeBtnText: { fontSize: 18, color: Colors.muted },
+    headerTitle: { fontSize: Typography.base, fontFamily: Typography.bold, color: Colors.cream },
+    section: { paddingHorizontal: Spacing.xl, marginTop: Spacing.xl },
+    fieldLabel: { fontSize: Typography.sm, fontFamily: Typography.semibold, color: Colors.cream, marginBottom: 10 },
+    input: { backgroundColor: Colors.charcoal, borderRadius: Radius.xl, paddingHorizontal: 16, paddingVertical: 14, fontSize: Typography.sm, fontFamily: Typography.regular, color: Colors.cream, borderWidth: 1, borderColor: Colors.warm },
+    pillRow: { flexDirection: 'row', gap: 8 },
+    pill: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: Radius.full, borderWidth: 1, borderColor: Colors.warm, backgroundColor: Colors.charcoal },
+    pillActive: { borderColor: Colors.gold, backgroundColor: Colors.gold + '22' },
+    pillText: { fontSize: Typography.sm, fontFamily: Typography.medium, color: Colors.muted },
+    pillTextActive: { color: Colors.gold },
+    tastesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    tasteBtn: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: Radius.xl, borderWidth: 1, borderColor: Colors.warm, backgroundColor: Colors.charcoal },
+    tasteBtnActive: { borderColor: Colors.gold, backgroundColor: Colors.gold + '22' },
+    tasteBtnText: { fontSize: Typography.xs, fontFamily: Typography.medium, color: Colors.muted },
+    tasteBtnTextActive: { color: Colors.gold },
+    footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: Spacing.xl, paddingTop: 16, backgroundColor: Colors.obsidian + 'F0', borderTopWidth: 1, borderTopColor: Colors.warm },
+    saveBtn: { backgroundColor: Colors.gold, paddingVertical: 16, borderRadius: Radius.full, alignItems: 'center' },
+    saveBtnDisabled: { backgroundColor: Colors.stone },
+    saveBtnText: { fontSize: Typography.base, fontFamily: Typography.semibold, color: Colors.obsidian },
+    saveBtnTextDisabled: { color: Colors.warm },
+});
