@@ -10,22 +10,34 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useThemeColors } from '@/constants/Colors';
+import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius } from '@/constants/Typography';
+import { t } from '@/constants/i18n';
 
 const RELATIONSHIPS = ['Maman', 'Papa', 'Partenaire', 'Meilleure amie', 'Meilleur ami', 'Frère', 'Sœur', 'Collègue', 'Ami(e)'];
 const TASTES = ['🍷 Gastronomie', '🏋 Sport', '🎨 Art', '📚 Lecture', '🌿 Nature', '✈️ Voyage', '🎮 Gaming', '🎵 Musique', '💄 Beauté', '🍳 Cuisine'];
 
 export default function AddCloseOneScreen() {
-  const Colors = useThemeColors();
-  const styles = createStyles(Colors);
+    const Colors = useThemeColors();
+    const styles = createStyles(Colors);
     const insets = useSafeAreaInsets();
     const [name, setName] = useState('');
     const [relationship, setRelationship] = useState('');
     const [birthday, setBirthday] = useState('');
+    const [birthdayError, setBirthdayError] = useState('');
     const [selectedTastes, setSelectedTastes] = useState<string[]>([]);
 
     const canSave = name.trim().length > 0 && relationship.length > 0;
+
+    const validateBirthday = (value: string) => {
+        setBirthday(value);
+        if (value.length === 0) {
+            setBirthdayError('');
+            return;
+        }
+        const isValid = /^\d{2}\/\d{2}\/\d{4}$/.test(value);
+        setBirthdayError(isValid ? '' : 'Format attendu : JJ/MM/AAAA');
+    };
 
     const toggleTaste = (taste: string) => {
         setSelectedTastes((prev) =>
@@ -44,16 +56,16 @@ export default function AddCloseOneScreen() {
             {/* Header */}
             <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn}>
-                    <Text style={styles.closeBtnText}>✕</Text>
+                    <Text style={styles.closeBtnText}>{t('common.close')}</Text>
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Ajouter un proche</Text>
+                <Text style={styles.headerTitle}>{t('addCloseOne.title')}</Text>
                 <View style={{ width: 40 }} />
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
                 {/* Name */}
                 <View style={styles.section}>
-                    <Text style={styles.fieldLabel}>Prénom *</Text>
+                    <Text style={styles.fieldLabel}>{t('addCloseOne.firstName')}</Text>
                     <TextInput
                         value={name}
                         onChangeText={setName}
@@ -65,7 +77,7 @@ export default function AddCloseOneScreen() {
 
                 {/* Relationship */}
                 <View style={styles.section}>
-                    <Text style={styles.fieldLabel}>Relation *</Text>
+                    <Text style={styles.fieldLabel}>{t('addCloseOne.relation')}</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                         <View style={styles.pillRow}>
                             {RELATIONSHIPS.map((r) => (
@@ -86,20 +98,21 @@ export default function AddCloseOneScreen() {
 
                 {/* Birthday */}
                 <View style={styles.section}>
-                    <Text style={styles.fieldLabel}>Date d'anniversaire</Text>
+                    <Text style={styles.fieldLabel}>{t('addCloseOne.birthDate')}</Text>
                     <TextInput
                         value={birthday}
-                        onChangeText={setBirthday}
+                        onChangeText={validateBirthday}
                         placeholder="ex : 15/03/1990"
                         placeholderTextColor={Colors.muted}
-                        style={styles.input}
+                        style={[styles.input, birthdayError ? styles.inputError : null]}
                         keyboardType="numbers-and-punctuation"
                     />
+                    {birthdayError ? <Text style={styles.errorText}>{birthdayError}</Text> : null}
                 </View>
 
                 {/* Tastes */}
                 <View style={styles.section}>
-                    <Text style={styles.fieldLabel}>Centres d'intérêt</Text>
+                    <Text style={styles.fieldLabel}>{t('addCloseOne.interests')}</Text>
                     <View style={styles.tastesGrid}>
                         {TASTES.map((t) => (
                             <TouchableOpacity
@@ -124,7 +137,7 @@ export default function AddCloseOneScreen() {
                     activeOpacity={0.85}
                 >
                     <Text style={[styles.saveBtnText, !canSave && styles.saveBtnTextDisabled]}>
-                        Enregistrer {name || ''}
+                        {t('common.save')} {name || ''}
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -132,7 +145,7 @@ export default function AddCloseOneScreen() {
     );
 }
 
-const createStyles = (Colors: any) => StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
     container: { flex: 1 },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.xl, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: Colors.warm, marginBottom: 8 },
     closeBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
@@ -141,6 +154,8 @@ const createStyles = (Colors: any) => StyleSheet.create({
     section: { paddingHorizontal: Spacing.xl, marginTop: Spacing.xl },
     fieldLabel: { fontSize: Typography.sm, fontFamily: Typography.semibold, color: Colors.cream, marginBottom: 10 },
     input: { backgroundColor: Colors.charcoal, borderRadius: Radius.xl, paddingHorizontal: 16, paddingVertical: 14, fontSize: Typography.sm, fontFamily: Typography.regular, color: Colors.cream, borderWidth: 1, borderColor: Colors.warm },
+    inputError: { borderColor: Colors.error },
+    errorText: { fontSize: Typography.xs, fontFamily: Typography.regular, color: Colors.error, marginTop: 6 },
     pillRow: { flexDirection: 'row', gap: 8 },
     pill: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: Radius.full, borderWidth: 1, borderColor: Colors.warm, backgroundColor: Colors.charcoal },
     pillActive: { borderColor: Colors.gold, backgroundColor: Colors.gold + '22' },

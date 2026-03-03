@@ -1,48 +1,49 @@
 {
-    "expo": {
-        "name": "Oreli",
-        "slug": "oreli-rn",
-        "version": "1.0.0",
-        "newArchEnabled": true,
-        "orientation": "portrait",
-        "icon": "./assets/images/icon.png",
-        "scheme": "oreli",
-        "userInterfaceStyle": "dark",
-        "splash": {
-            "image": "./assets/images/splash.png",
-            "resizeMode": "contain",
-            "backgroundColor": "#0C0A09"
-        },
-        "ios": {
-            "supportsTablet": false,
-            "bundleIdentifier": "com.oreli.app"
-        },
-        "android": {
-            "adaptiveIcon": {
-                "foregroundImage": "./assets/images/adaptive-icon.png",
-                "backgroundColor": "#0C0A09"
-            },
-            "package": "com.oreli.app"
-        },
-        "web": {
-            "bundler": "metro",
-            "output": "static",
-            "favicon": "./assets/images/favicon.png"
-        },
-        "plugins": [
-            "expo-router",
-            [
-                "expo-splash-screen",
-                {
-                    "image": "./assets/images/splash.png",
-                    "imageWidth": 200,
-                    "resizeMode": "contain",
-                    "backgroundColor": "#0C0A09"
-                }
-            ]
-        ],
-        "experiments": {
-            "typedRoutes": true
+  "expo": {
+    "name": "Oreli",
+    "slug": "oreli-rn",
+    "version": "1.0.0",
+    "newArchEnabled": true,
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "oreli",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FCFBF9"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.oreli.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#0C0A09"
+      },
+      "package": "com.oreli.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#FCFBF9"
         }
+      ],
+      "@react-native-community/datetimepicker"
+    ],
+    "experiments": {
+      "typedRoutes": true
     }
+  }
 }

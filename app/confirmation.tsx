@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useThemeColors } from '@/constants/Colors';
+import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius } from '@/constants/Typography';
 import { useGiftStore } from '@/store/giftStore';
 
@@ -16,15 +16,30 @@ export default function ConfirmationScreen() {
     const person = selectedPerson;
     const total = (product?.price ?? 0) + (giftFlow.premiumWrap ? 5 : 0);
 
+    const deliveryText = (() => {
+        if (giftFlow.deliveryDate) {
+            const d = new Date(giftFlow.deliveryDate);
+            if (!isNaN(d.getTime())) {
+                return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+            }
+        }
+        return '2–3 jours ouvrés';
+    })();
+
     const handleHome = () => {
         resetGiftFlow();
         router.replace('/(tabs)');
     };
 
+    const handleTrack = () => {
+        resetGiftFlow();
+        router.replace('/(tabs)/orders');
+    };
+
     return (
         <View style={[styles.container, { backgroundColor: Colors.obsidian }]}>
             <LinearGradient
-                colors={['rgba(202,138,4,0.08)'.obsidian]}
+                colors={['rgba(202,138,4,0.08)', Colors.obsidian]}
                 locations={[0, 0.6]}
                 style={StyleSheet.absoluteFill}
             />
@@ -57,7 +72,7 @@ export default function ConfirmationScreen() {
                         <View style={styles.divider} />
                         <View style={styles.orderRow}>
                             <Text style={styles.orderLabel}>Livraison estimée</Text>
-                            <Text style={styles.orderValue}>Demain avant 18h</Text>
+                            <Text style={styles.orderValue}>{deliveryText}</Text>
                         </View>
                         <View style={styles.divider} />
                         <View style={styles.orderRow}>
@@ -71,7 +86,7 @@ export default function ConfirmationScreen() {
                     <TouchableOpacity
                         style={styles.trackBtn}
                         activeOpacity={0.85}
-                        onPress={() => { }}
+                        onPress={handleTrack}
                     >
                         <Text style={styles.trackBtnText}>📍  Suivre ma commande</Text>
                     </TouchableOpacity>
@@ -89,7 +104,7 @@ export default function ConfirmationScreen() {
     );
 }
 
-const createStyles = (Colors: any) => StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
     container: { flex: 1 },
     content: { flex: 1, paddingHorizontal: Spacing['2xl'], alignItems: 'center' },
     successCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: Colors.gold + '22', alignItems: 'center', justifyContent: 'center', marginBottom: 28, borderWidth: 1, borderColor: Colors.gold + '44' },

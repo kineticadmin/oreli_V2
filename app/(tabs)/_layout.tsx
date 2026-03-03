@@ -2,102 +2,137 @@ import { Tabs } from 'expo-router';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useThemeColors } from '@/constants/Colors';
+import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
+import { t } from '@/constants/i18n';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { Feather } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 const NAV_TABS = [
-    { key: 'index', label: 'Accueil', icon: '⌂' },
-    { key: 'gifts', label: 'Cadeaux', icon: '◇' },
-    { key: 'orders', label: 'Commandes', icon: '▣' },
-    { key: 'close', label: 'Proches', icon: '♡' },
-    { key: 'profile', label: 'Profil', icon: '○' },
-] as const;
+    { key: 'index', label: '', icon: 'home' as const, isMain: false },
+    { key: 'close', label: '', icon: 'heart' as const, isMain: false },
+    { key: 'gifts', label: 'Rechercher', icon: 'search' as const, isMain: true },
+    { key: 'profile', label: '', icon: 'user' as const, isMain: false },
+];
+
+import { useColorScheme } from 'react-native';
+import { useGiftStore } from '@/store/giftStore';
+import { Shadow } from '@/constants/Typography';
 
 function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     const Colors = useThemeColors();
     const styles = createStyles(Colors);
     const insets = useSafeAreaInsets();
 
+    const systemScheme = useColorScheme();
+    const theme = useGiftStore((s) => s.theme);
+    const effectiveTheme = theme === 'system' ? systemScheme : theme;
+    const isDark = effectiveTheme === 'dark';
+
     return (
-        <View style={[styles.wrapper, { paddingBottom: insets.bottom + 8 }]}>
-            <BlurView intensity={60} tint="dark" style={styles.blur}>
-                <View style={styles.tabRow}>
-                    {NAV_TABS.map((tab, idx) => {
-                        const isActive = state.index === idx;
-                        return (
-                            <TouchableOpacity
-                                key={tab.key}
-                                activeOpacity={0.7}
-                                onPress={() => navigation.navigate(tab.key)}
-                                style={styles.tab}
-                            >
-                                <Text style={[styles.icon, isActive && styles.iconActive]}>
-                                    {tab.icon}
-                                </Text>
-                                <Text style={[styles.label, isActive && styles.labelActive]}>
-                                    {tab.label}
-                                </Text>
-                                {isActive && <View style={styles.activeDot} />}
-                            </TouchableOpacity>
-                        );
-                    })}
-                </View>
-            </BlurView>
+        <View style={[styles.wrapper, { bottom: insets.bottom + 12 }]}>
+            {NAV_TABS.map((tab, idx) => {
+                // Find the actual index of the screen in the navigation state
+                // Since 'orders' is still in the Tabs.Screen list but not in NAV_TABS,
+                // we need to match by route name.
+                const routeIndex = state.routes.findIndex(r => r.name === tab.key);
+                const isActive = state.index === routeIndex;
+
+                if (tab.isMain) {
+                    return (
+                        <TouchableOpacity
+                            key={tab.key}
+                            activeOpacity={0.8}
+                            onPress={() => {
+                                if (tab.key === 'gifts') {
+                                    router.push('/gift-flow');
+                                } else {
+                                    navigation.navigate(tab.key);
+                                }
+                            }}
+                            style={[styles.mainTab, isActive && styles.mainTabActive]}
+                        >
+                            <Feather
+                                name={tab.icon}
+                                size={20}
+                                color={isActive ? Colors.gold : Colors.muted}
+                            />
+                            <Text style={[styles.mainLabel, isActive && styles.mainLabelActive]}>
+                                {tab.label}
+                            </Text>
+                        </TouchableOpacity>
+                    );
+                }
+
+                return (
+                    <TouchableOpacity
+                        key={tab.key}
+                        activeOpacity={0.8}
+                        onPress={() => navigation.navigate(tab.key)}
+                        style={[styles.circleTab, isActive && styles.circleTabActive]}
+                    >
+                        <Feather
+                            name={tab.icon}
+                            size={22}
+                            color={isActive ? Colors.gold : Colors.muted}
+                        />
+                    </TouchableOpacity>
+                );
+            })}
         </View>
     );
 }
 
-const createStyles = (Colors: any) => StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
     wrapper: {
         position: 'absolute',
-        bottom: 12,
         left: 16,
         right: 16,
-        borderRadius: 24,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: Colors.glassBorder,
-    },
-    blur: {
-        overflow: 'hidden',
-        borderRadius: 24,
-    },
-    tabRow: {
         flexDirection: 'row',
-        justifyContent: 'space-around',
-        paddingTop: 10,
-        paddingHorizontal: 4,
-    },
-    tab: {
-        flex: 1,
         alignItems: 'center',
-        gap: 2,
-        paddingVertical: 4,
+        justifyContent: 'space-between',
+        backgroundColor: 'transparent',
     },
-    icon: {
-        fontSize: 20,
+    circleTab: {
+        width: 52,
+        height: 52,
+        borderRadius: 26,
+        backgroundColor: Colors.charcoal,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: Colors.warm,
+        ...Shadow.card,
+    },
+    circleTabActive: {
+        borderColor: Colors.gold + '44',
+    },
+    mainTab: {
+        flex: 1,
+        height: 52,
+        marginHorizontal: 12,
+        borderRadius: 26,
+        backgroundColor: Colors.charcoal,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        borderWidth: 1,
+        borderColor: Colors.warm,
+        ...Shadow.card,
+    },
+    mainTabActive: {
+        borderColor: Colors.gold + '44',
+    },
+    mainLabel: {
+        fontSize: 15,
+        fontFamily: Typography.medium,
         color: Colors.muted,
     },
-    iconActive: {
-        color: Colors.cream,
-    },
-    label: {
-        fontSize: Typography.xs,
-        fontFamily: Typography.regular,
-        color: Colors.muted,
-    },
-    labelActive: {
-        color: Colors.cream,
+    mainLabelActive: {
+        color: Colors.gold,
         fontFamily: Typography.semibold,
-    },
-    activeDot: {
-        position: 'absolute',
-        bottom: -2,
-        width: 4,
-        height: 4,
-        borderRadius: 2,
-        backgroundColor: Colors.gold,
     },
 });
 

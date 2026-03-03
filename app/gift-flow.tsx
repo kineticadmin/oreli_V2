@@ -9,9 +9,11 @@ import {
     KeyboardAvoidingView,
     Platform,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useThemeColors } from '@/constants/Colors';
+import { Feather } from '@expo/vector-icons';
+import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius, Shadow } from '@/constants/Typography';
 import {
     closeOnes,
@@ -23,7 +25,7 @@ import {
 } from '@/data/mockData';
 import { useGiftStore } from '@/store/giftStore';
 
-type MessageRole = 'oreli' | 'user' | 'choices' | 'products' | 'summary';
+type MessageRole = 'oreli' | 'user' | 'choices' | 'products' | 'summary' | 'datePicker';
 
 interface Choice { id: string; label: string; sublabel?: string; icon?: string }
 interface ChatMessage {
@@ -33,6 +35,7 @@ interface ChatMessage {
     choices?: Choice[];
     field?: string;
     summaryData?: { budget: string; delivery: string; person: string };
+    layout?: 'grid' | 'horizontal';
 }
 
 const personChoices: Choice[] = closeOnes.map((p) => ({
@@ -45,12 +48,12 @@ const personChoices: Choice[] = closeOnes.map((p) => ({
 const occasionChoices: Choice[] = occasions.map((o) => ({
     id: o.label,
     label: o.label,
-    icon: o.emoji,
+    icon: o.iconName,
 }));
 
 export default function GiftFlowScreen() {
-  const Colors = useThemeColors();
-  const styles = createStyles(Colors);
+    const Colors = useThemeColors();
+    const styles = createStyles(Colors);
     const insets = useSafeAreaInsets();
     const { selectedPerson, setSelectedPerson, updateGiftFlow } = useGiftStore();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -63,12 +66,13 @@ export default function GiftFlowScreen() {
     });
     const listRef = useRef<FlatList>(null);
     const [step, setStep] = useState(selectedPerson ? 1 : 0);
+    const [selectedDate, setSelectedDate] = useState(new Date());
 
     const getPersonName = (id: string) => closeOnes.find((p) => p.id === id)?.name || '';
 
     const addMessage = (msg: Omit<ChatMessage, 'id'>) => {
         setMessages((prev) => [...prev, { ...msg, id: `${Date.now()}-${Math.random()}` }]);
-        setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
+        setTimeout(() => listRef.current?.scrollToOffset({ offset: 0, animated: true }), 100);
     };
 
     const simulateTyping = (callback: () => void, delay = 800) => {
@@ -105,8 +109,8 @@ export default function GiftFlowScreen() {
                 break;
             case 3:
                 simulateTyping(() => {
-                    addMessage({ role: 'oreli', text: "Tu en as besoin pour quand ?" });
-                    setTimeout(() => addMessage({ role: 'choices', choices: deliveryOptions.map(d => ({ id: d.id, label: d.label, sublabel: d.sublabel })), field: 'deliveryDate' }), 300);
+                    addMessage({ role: 'oreli', text: "Pour quand veux-tu offrir ce cadeau ?" });
+                    setTimeout(() => addMessage({ role: 'datePicker', field: 'deliveryDate' }), 300);
                     setCurrentField('deliveryDate');
                 });
                 break;
@@ -168,7 +172,8 @@ export default function GiftFlowScreen() {
             simulateTyping(() => {
                 addMessage({ role: 'oreli', text: `Je m'occupe de tout pour ${personName} ! Une magnifique surprise sera livrée.` });
                 setTimeout(() => {
-                    addMessage({ role: 'summary', summaryData: { budget: `~${data.budget}€`, delivery: data.deliveryDate === 'today' ? "Aujourd'hui" : data.deliveryDate === 'tomorrow' ? 'Demain' : 'Cette semaine', person: personName }, field: 'confirm_total' });
+                    const formattedDate = new Date(data.deliveryDate).toLocaleDateString('fr-FR');
+                    addMessage({ role: 'summary', summaryData: { budget: `~${data.budget}€`, delivery: formattedDate, person: personName }, field: 'confirm_total' });
                 }, 400);
             }, 1200);
         } else {
@@ -177,7 +182,7 @@ export default function GiftFlowScreen() {
                 addMessage({ role: 'oreli', text: txt });
                 const productList = level === 'guided' ? filtered.slice(0, 3) : filtered;
                 // Store products in message for rendering
-                setTimeout(() => addMessage({ role: 'products' as MessageRole, text: JSON.stringify(productList.map(p => p.id)) }), 400);
+                setTimeout(() => addMessage({ role: 'products' as MessageRole, text: JSON.stringify(productList.map(p => p.id)), layout: level === 'guided' ? 'horizontal' : 'grid' }), 400);
             }, 1500);
         }
     };
@@ -216,7 +221,14 @@ export default function GiftFlowScreen() {
                             onPress={() => handleChoice(item.field || '', choice.id, choice.label, item.id)}
                             activeOpacity={isAnswered ? 1 : 0.75}
                         >
-                            {choice.icon && <Text style={styles.choiceIcon}>{choice.icon}</Text>}
+                            {choice.icon && (
+                                <Feather
+                                    name={choice.icon as any}
+                                    size={20}
+                                    color={isAnswered ? Colors.obsidian : Colors.cream}
+                                    style={styles.choiceIcon}
+                                />
+                            )}
                             <View>
                                 <Text style={[styles.choiceLabel, isAnswered && styles.choiceLabelAnswered]}>{choice.label}</Text>
                                 {choice.sublabel ? <Text style={styles.choiceSublabel}>{choice.sublabel}</Text> : null}
@@ -229,7 +241,9 @@ export default function GiftFlowScreen() {
         if (item.role === 'summary' && item.summaryData) {
             return (
                 <View style={styles.summaryCard}>
-                    <Text style={styles.summaryTitle}>🎁  Surprise Totale</Text>
+                    <Text style={styles.summaryTitle}>
+                        <Feather name="gift" size={16} color={Colors.gold} /> Surprise Totale
+                    </Text>
                     <Text style={styles.summaryMeta}>Budget : {item.summaryData.budget}  ·  Livraison : {item.summaryData.delivery}</Text>
                     <TouchableOpacity
                         style={styles.summaryBtn}
@@ -243,9 +257,63 @@ export default function GiftFlowScreen() {
                 </View>
             );
         }
+        if (item.role === 'datePicker') {
+            const isAnswered = answeredIds.has(item.id);
+            if (isAnswered) return null; // We already added the "user" message for the chosen date
+            return (
+                <View style={styles.datePickerCard}>
+                    <DateTimePicker
+                        value={selectedDate}
+                        mode="date"
+                        display="inline"
+                        themeVariant={Colors.obsidian === '#FFFFFF' ? 'light' : 'dark'}
+                        onChange={(event, date) => setSelectedDate(date || selectedDate)}
+                    />
+                    <TouchableOpacity
+                        style={styles.summaryBtn}
+                        onPress={() => {
+                            const dateStr = selectedDate.toISOString();
+                            const displayStr = selectedDate.toLocaleDateString('fr-FR');
+                            handleChoice(item.field || 'deliveryDate', dateStr, displayStr, item.id);
+                        }}
+                    >
+                        <Text style={styles.summaryBtnText}>Valider la date</Text>
+                    </TouchableOpacity>
+                </View>
+            );
+        }
         if (item.role === 'products' && item.text) {
             const ids: string[] = JSON.parse(item.text);
             const prods = products.filter((p) => ids.includes(p.id));
+            if (item.layout === 'grid') {
+                return (
+                    <View style={styles.gridContainer}>
+                        {prods.map(prod => (
+                            <TouchableOpacity
+                                key={prod.id}
+                                style={styles.productCardGrid}
+                                onPress={() => {
+                                    useGiftStore.getState().setSelectedProduct(prod);
+                                    router.push(`/product/${prod.id}`);
+                                }}
+                                activeOpacity={0.85}
+                            >
+                                <View style={styles.productImageWrapGrid}>
+                                    <Text style={styles.productImagePlaceholder}>📦</Text>
+                                    <View style={styles.matchBadge}>
+                                        <Text style={styles.matchBadgeText}>✦ {prod.matchScore}%</Text>
+                                    </View>
+                                </View>
+                                <View style={styles.productInfo}>
+                                    <Text style={styles.productName} numberOfLines={2}>{prod.name}</Text>
+                                    <Text style={styles.productPrice}>{prod.price}€</Text>
+                                </View>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                );
+            }
+
             return (
                 <FlatList
                     data={prods}
@@ -307,11 +375,12 @@ export default function GiftFlowScreen() {
             {/* Messages */}
             <FlatList
                 ref={listRef}
-                data={messages}
+                data={[...messages].reverse()}
+                inverted
                 renderItem={renderMessage}
                 keyExtractor={(m) => m.id}
                 contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12 }}
-                ListFooterComponent={
+                ListHeaderComponent={
                     isTyping ? (
                         <View style={styles.msgOreli}>
                             <View style={styles.msgAvatar}><Text style={styles.msgAvatarText}>✦</Text></View>
@@ -360,7 +429,7 @@ export default function GiftFlowScreen() {
     );
 }
 
-const createStyles = (Colors: any) => StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
     container: { flex: 1 },
     header: {
         flexDirection: 'row',
@@ -400,9 +469,13 @@ const createStyles = (Colors: any) => StyleSheet.create({
     summaryCard: { marginLeft: 36, backgroundColor: Colors.charcoal, borderRadius: Radius.xl, borderWidth: 1, borderColor: Colors.gold + '44', padding: 20, marginBottom: 12 },
     summaryTitle: { fontSize: Typography.lg, fontFamily: Typography.bold, color: Colors.cream, textAlign: 'center', marginBottom: 6 },
     summaryMeta: { fontSize: Typography.sm, fontFamily: Typography.regular, color: Colors.muted, textAlign: 'center', marginBottom: 16 },
-    summaryBtn: { backgroundColor: Colors.gold, paddingVertical: 14, borderRadius: Radius.full, alignItems: 'center' },
+    summaryBtn: { backgroundColor: Colors.gold, paddingVertical: 14, borderRadius: Radius.full, alignItems: 'center', marginTop: 12 },
     summaryBtnText: { fontSize: Typography.sm, fontFamily: Typography.semibold, color: Colors.obsidian },
-    productCard: { width: 200, backgroundColor: Colors.charcoal, borderRadius: Radius.xl, overflow: 'hidden', flexShrink: 0 },
+    datePickerCard: { marginLeft: 36, backgroundColor: Colors.charcoal, borderRadius: Radius.xl, borderWidth: 1, borderColor: Colors.warm, padding: 12, marginBottom: 12, overflow: 'hidden' },
+    productCard: { width: 200, backgroundColor: Colors.charcoal, borderRadius: Radius.xl, overflow: 'hidden', flexShrink: 0, borderWidth: 1, borderColor: Colors.warm },
+    gridContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingLeft: 36, paddingRight: 16, paddingTop: 4, paddingBottom: 16 },
+    productCardGrid: { width: '47%', backgroundColor: Colors.charcoal, borderRadius: Radius.xl, overflow: 'hidden', borderWidth: 1, borderColor: Colors.warm },
+    productImageWrapGrid: { height: 140, backgroundColor: Colors.stone, alignItems: 'center', justifyContent: 'center', position: 'relative' },
     productImageWrap: { height: 220, backgroundColor: Colors.stone, alignItems: 'center', justifyContent: 'center', position: 'relative' },
     productImagePlaceholder: { fontSize: 48 },
     matchBadge: { position: 'absolute', top: 10, right: 10, backgroundColor: Colors.charcoal + 'dd', paddingHorizontal: 8, paddingVertical: 4, borderRadius: Radius.full, flexDirection: 'row', alignItems: 'center' },

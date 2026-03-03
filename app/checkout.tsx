@@ -10,21 +10,23 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useThemeColors } from '@/constants/Colors';
+import { Feather } from '@expo/vector-icons';
+import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius, Shadow } from '@/constants/Typography';
 import { useGiftStore } from '@/store/giftStore';
+import { t } from '@/constants/i18n';
 
 export default function CheckoutScreen() {
-  const Colors = useThemeColors();
-  const styles = createStyles(Colors);
+    const Colors = useThemeColors();
+    const styles = createStyles(Colors);
     const insets = useSafeAreaInsets();
-    const { selectedProduct, giftFlow, updateGiftFlow } = useGiftStore();
+    const { selectedProduct, giftFlow, updateGiftFlow, userAddress } = useGiftStore();
     const [loading, setLoading] = useState(false);
     const [editingMsg, setEditingMsg] = useState(false);
 
     const product = selectedProduct;
     const premiumWrap = giftFlow.premiumWrap ?? false;
-    const giftMessage = giftFlow.giftMessage ?? 'Avec tout mon amour 💝';
+    const giftMessage = giftFlow.giftMessage ?? 'Avec tout mon amour';
     const wrapCost = premiumWrap ? 5 : 0;
     const total = (product?.price ?? 0) + wrapCost;
 
@@ -41,9 +43,9 @@ export default function CheckoutScreen() {
             {/* Header */}
             <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <Text style={styles.backBtnText}>←</Text>
+                    <Text style={styles.backBtnText}>{t('common.back')}</Text>
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Finaliser la commande</Text>
+                <Text style={styles.headerTitle}>{t('checkout.title')}</Text>
                 <View style={{ width: 40 }} />
             </View>
 
@@ -51,44 +53,58 @@ export default function CheckoutScreen() {
                 {/* Product Summary */}
                 {product && (
                     <View style={[styles.productCard, { marginTop: 16 }]}>
-                        <View style={styles.productImageBox}>
-                            <Text style={styles.productImagePlaceholder}>📦</Text>
-                        </View>
-                        <View style={styles.productInfo}>
-                            <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
-                            <Text style={styles.productSeller}>{product.seller}</Text>
-                            <Text style={styles.productPrice}>{product.price}€</Text>
-                        </View>
+                        {giftFlow.surpriseLevel === 'total' ? (
+                            <>
+                                <View style={styles.productImageBox}>
+                                    <Feather name="gift" size={32} color={Colors.gold} />
+                                </View>
+                                <View style={styles.productInfo}>
+                                    <Text style={styles.productName} numberOfLines={2}>Surprise Totale Oreli</Text>
+                                    <Text style={styles.productSeller}>Sélectionné par la magie de l'IA</Text>
+                                    <Text style={[styles.productPrice, { color: Colors.gold }]}>Prix validé: {product.price}€</Text>
+                                </View>
+                            </>
+                        ) : (
+                            <>
+                                <View style={styles.productImageBox}>
+                                    <Feather name="package" size={32} color={Colors.cream} />
+                                </View>
+                                <View style={styles.productInfo}>
+                                    <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
+                                    <Text style={styles.productSeller}>{product.seller}</Text>
+                                    <Text style={styles.productPrice}>{product.price}€</Text>
+                                </View>
+                            </>
+                        )}
                     </View>
                 )}
 
-                {/* Delivery */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Adresse de livraison</Text>
+                    <Text style={styles.sectionTitle}>{t('checkout.shippingAddress')}</Text>
                     <View style={styles.card}>
-                        <Text style={styles.addressName}>Sophie Dupont</Text>
-                        <Text style={styles.addressLine}>Rue de la Loi 42, 1000 Bruxelles</Text>
+                        <Text style={styles.addressName}>{userAddress.name}</Text>
+                        <Text style={styles.addressLine}>{userAddress.line}</Text>
                         <TouchableOpacity style={styles.modifyBtn}>
-                            <Text style={styles.modifyBtnText}>Modifier</Text>
+                            <Text style={styles.modifyBtnText}>{t('common.modify')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
 
                 {/* Payment */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Paiement</Text>
+                    <Text style={styles.sectionTitle}>{t('checkout.payment')}</Text>
                     <View style={styles.card}>
                         <View style={styles.payMethodRow}>
                             <TouchableOpacity style={styles.payBtn}>
-                                <Text style={styles.payBtnText}> Pay</Text>
+                                <Text style={styles.payBtnText}> {t('common.pay')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.payBtn}>
-                                <Text style={styles.payBtnText}>G Pay</Text>
+                                <Text style={styles.payBtnText}>{t('common.gpay')}</Text>
                             </TouchableOpacity>
                         </View>
                         <View style={styles.dividerRow}>
                             <View style={styles.divider} />
-                            <Text style={styles.dividerText}>ou par carte</Text>
+                            <Text style={styles.dividerText}>{t('common.orByCard')}</Text>
                             <View style={styles.divider} />
                         </View>
                         <TextInput
@@ -107,9 +123,9 @@ export default function CheckoutScreen() {
                 {/* Gift Message */}
                 <View style={styles.section}>
                     <View style={styles.sectionRow}>
-                        <Text style={styles.sectionTitle}>Message cadeau</Text>
+                        <Text style={styles.sectionTitle}>{t('checkout.giftMessage')}</Text>
                         <TouchableOpacity onPress={() => setEditingMsg(!editingMsg)}>
-                            <Text style={styles.editBtnText}>{editingMsg ? 'Valider' : 'Modifier ✎'}</Text>
+                            <Text style={styles.editBtnText}>{editingMsg ? t('common.validate') : t('common.edit')}</Text>
                         </TouchableOpacity>
                     </View>
                     {editingMsg ? (
@@ -132,21 +148,21 @@ export default function CheckoutScreen() {
                 {/* Price Breakdown */}
                 <View style={styles.section}>
                     <View style={styles.priceRow}>
-                        <Text style={styles.priceLabel}>Sous-total</Text>
+                        <Text style={styles.priceLabel}>{t('checkout.subtotal')}</Text>
                         <Text style={styles.priceValue}>{product?.price ?? 0}€</Text>
                     </View>
                     <View style={styles.priceRow}>
-                        <Text style={styles.priceLabel}>Livraison</Text>
-                        <Text style={[styles.priceValue, { color: Colors.success }]}>Gratuite</Text>
+                        <Text style={styles.priceLabel}>{t('checkout.shippingLabel')}</Text>
+                        <Text style={[styles.priceValue, { color: Colors.success }]}>{t('checkout.free')}</Text>
                     </View>
                     {premiumWrap && (
                         <View style={styles.priceRow}>
-                            <Text style={styles.priceLabel}>Emballage premium</Text>
+                            <Text style={styles.priceLabel}>{t('checkout.premiumWrap')}</Text>
                             <Text style={styles.priceValue}>5€</Text>
                         </View>
                     )}
                     <View style={[styles.priceRow, styles.priceTotal]}>
-                        <Text style={styles.priceTotalLabel}>Total</Text>
+                        <Text style={styles.priceTotalLabel}>{t('checkout.total')}</Text>
                         <Text style={styles.priceTotalValue}>{total}€</Text>
                     </View>
                 </View>
@@ -163,7 +179,7 @@ export default function CheckoutScreen() {
                     {loading ? (
                         <ActivityIndicator color={Colors.obsidian} />
                     ) : (
-                        <Text style={styles.confirmBtnText}>Confirmer — {total}€</Text>
+                        <Text style={styles.confirmBtnText}>{t('checkout.confirmText', { total })}</Text>
                     )}
                 </TouchableOpacity>
             </View>
@@ -171,7 +187,7 @@ export default function CheckoutScreen() {
     );
 }
 
-const createStyles = (Colors: any) => StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
     container: { flex: 1 },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.xl, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: Colors.warm },
     backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },

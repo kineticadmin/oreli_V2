@@ -11,7 +11,7 @@ import {
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useThemeColors } from '@/constants/Colors';
+import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius } from '@/constants/Typography';
 
 const { width: W, height: H } = Dimensions.get('window');
@@ -122,7 +122,7 @@ export default function OnboardingScreen() {
     );
 }
 
-const createStyles = (Colors: any) => StyleSheet.create({
+const createStyles = (Colors: ThemeColors) => StyleSheet.create({
     container: { flex: 1, backgroundColor: Colors.obsidian },
     slide: { width: W, height: H },
     gradient: { flex: 1, justifyContent: 'space-between' },
