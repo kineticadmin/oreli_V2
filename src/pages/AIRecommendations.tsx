@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, Star } from "lucide-react";
 import { products } from "@/data/mockData";
 
 interface AIRecommendationsProps {
@@ -37,33 +38,16 @@ const AIRecommendations: React.FC<AIRecommendationsProps> = ({
 
   if (thinking) {
     return (
-      <div className="app-container h-screen flex flex-col items-center justify-center bg-soft-lavender/20">
-        {/* Pulsing orb */}
+      <div className="app-container h-screen flex flex-col items-center justify-center bg-background">
         <motion.div
-          className="w-32 h-32 rounded-full gradient-magic relative"
-          animate={{ scale: [1, 1.2, 1] }}
+          className="w-20 h-20 rounded-full bg-foreground flex items-center justify-center"
+          animate={{ scale: [1, 1.1, 1] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
-          {[0, 1, 2, 3, 4].map((i) => (
-            <motion.span
-              key={i}
-              className="absolute text-sm"
-              style={{
-                top: `${20 + Math.sin(i * 1.2) * 60}%`,
-                left: `${20 + Math.cos(i * 1.2) * 60}%`,
-              }}
-              animate={{
-                y: [0, -10, 0],
-                opacity: [0.3, 1, 0.3],
-              }}
-              transition={{ duration: 2, repeat: Infinity, delay: i * 0.4 }}
-            >
-              ✨
-            </motion.span>
-          ))}
+          <span className="text-primary-foreground text-2xl">✦</span>
         </motion.div>
 
-        <h2 className="font-display italic text-xl text-foreground mt-8">
+        <h2 className="text-xl font-bold text-foreground mt-8">
           Oreli réfléchit...
         </h2>
         <AnimatePresence mode="wait">
@@ -72,7 +56,7 @@ const AIRecommendations: React.FC<AIRecommendationsProps> = ({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="text-sm text-muted-foreground mt-2"
+            className="text-sm text-muted-foreground mt-3"
           >
             {thinkingTexts[thinkingIdx]}
           </motion.p>
@@ -82,83 +66,83 @@ const AIRecommendations: React.FC<AIRecommendationsProps> = ({
   }
 
   return (
-    <div className="app-container h-screen overflow-y-auto bg-background pb-6">
-      <div className="px-4 pt-6">
+    <div className="app-container h-screen overflow-y-auto bg-background pb-8">
+      <div className="px-6 pt-6">
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={onBack}
-          className="text-muted-foreground text-sm mb-4"
+          className="flex items-center gap-2 text-muted-foreground text-sm mb-6"
         >
-          ← Retour
+          <ArrowLeft className="w-4 h-4" /> Retour
         </motion.button>
 
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="font-display text-[24px] font-bold mb-1"
+          className="text-[22px] font-bold mb-2"
         >
-          Voici mes recommandations pour {personName} 💝
+          Recommandations pour {personName}
         </motion.h1>
-        <p className="text-sm text-muted-foreground mb-6">
+        <p className="text-sm text-muted-foreground mb-8">
           Score d'affinité basé sur ses goûts et l'occasion
         </p>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-5">
           {products.map((product, idx) => (
             <motion.div
               key={product.id}
-              initial={{ opacity: 0, y: 30, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ delay: idx * 0.15 }}
-              className="bg-card rounded-lg shadow-card overflow-hidden"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.12 }}
+              className="bg-card rounded-2xl shadow-card overflow-hidden"
             >
               <img
                 src={product.images[0]}
                 alt={product.name}
-                className="w-full h-48 object-cover"
+                className="w-full h-52 object-cover"
               />
-              <div className="p-4">
+              <div className="p-5">
                 {/* Score bar */}
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                     <div
-                      className="h-full rounded-full gradient-celebration animate-fill-bar"
+                      className="h-full rounded-full bg-foreground animate-fill-bar"
                       style={{ "--fill-width": `${product.matchScore}%` } as React.CSSProperties}
                     />
                   </div>
-                  <span className="text-sm font-semibold text-secondary">
+                  <span className="text-sm font-bold text-foreground">
                     {product.matchScore}%
                   </span>
                 </div>
 
-                <h2 className="font-display text-lg font-bold">{product.name}</h2>
-                <p className="text-sm italic text-muted-foreground mt-1">
+                <h2 className="text-lg font-bold">{product.name}</h2>
+                <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
                   {product.aiJustification}
                 </p>
 
                 <div className="flex items-center gap-2 mt-2">
-                  <span className="text-xs text-muted-foreground">
-                    {product.seller} · ⭐ {product.rating}
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    {product.seller} · <Star className="w-3 h-3 fill-foreground text-foreground" /> {product.rating}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between mt-3">
-                  <span className="text-xl font-semibold text-foreground">{product.price}€</span>
+                <div className="flex items-center justify-between mt-4">
+                  <span className="text-xl font-bold text-foreground">{product.price}€</span>
                   <span className="text-xs text-muted-foreground">Frais inclus</span>
                 </div>
 
-                <div className="flex gap-2 mt-3">
+                <div className="flex gap-2.5 mt-4">
                   <motion.button
-                    whileTap={{ scale: 0.95 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => onSelectProduct(product.id)}
-                    className="flex-1 py-2.5 rounded-xl border-2 border-primary text-primary font-semibold text-sm"
+                    className="flex-1 py-3 rounded-full border-2 border-foreground text-foreground font-semibold text-sm"
                   >
                     Voir détail
                   </motion.button>
                   <motion.button
-                    whileTap={{ scale: 0.95 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => onSelectProduct(product.id)}
-                    className="flex-1 py-2.5 rounded-xl gradient-primary text-white font-semibold text-sm"
+                    className="flex-1 py-3 rounded-full bg-foreground text-primary-foreground font-semibold text-sm"
                   >
                     Offrir celui-ci
                   </motion.button>
@@ -168,8 +152,8 @@ const AIRecommendations: React.FC<AIRecommendationsProps> = ({
           ))}
         </div>
 
-        <button className="w-full mt-4 py-3 text-muted-foreground text-sm">
-          Aucun ne me plaît — relancer la recherche 🔄
+        <button className="w-full mt-6 py-3 text-muted-foreground text-sm font-medium">
+          Aucun ne me plaît — relancer la recherche
         </button>
       </div>
     </div>

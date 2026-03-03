@@ -1,5 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight } from "lucide-react";
 import onboarding1 from "@/assets/onboarding-gift-1.jpg";
 import onboarding2 from "@/assets/onboarding-gift-2.jpg";
 import onboarding3 from "@/assets/onboarding-gift-3.jpg";
@@ -11,36 +12,18 @@ interface OnboardingProps {
 const slides = [
   {
     image: onboarding1,
-    titleLines: [
-      { text: "Ton", style: "normal" },
-      { text: "Cadeau.", style: "italic" },
-      { text: "Ton", style: "normal" },
-      { text: "Moment.", style: "italic" },
-    ],
+    title: "Offrir avec\nintention",
     subtitle: "Fini les heures de recherche et le stress de dernière minute.",
-    overlayGradient: "from-primary/60 via-secondary/30 to-transparent",
   },
   {
     image: onboarding2,
-    titleLines: [
-      { text: "On", style: "normal" },
-      { text: "Comprend", style: "italic" },
-      { text: "Ceux que", style: "normal" },
-      { text: "Tu Aimes.", style: "italic" },
-    ],
+    title: "On comprend\nceux que\ntu aimes",
     subtitle: "Notre IA apprend les goûts de tes proches et propose des cadeaux qui touchent en plein cœur.",
-    overlayGradient: "from-accent/50 via-primary/20 to-transparent",
   },
   {
     image: onboarding3,
-    titleLines: [
-      { text: "60", style: "normal" },
-      { text: "Secondes.", style: "italic" },
-      { text: "Le Cadeau", style: "normal" },
-      { text: "Parfait.", style: "italic" },
-    ],
+    title: "60 secondes.\nLe cadeau\nparfait.",
     subtitle: "Des artisans locaux à Bruxelles, livrés chez toi. Zéro stress.",
-    overlayGradient: "from-secondary/60 via-golden-honey/30 to-transparent",
   },
 ];
 
@@ -68,41 +51,18 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
             src={slides[current].image}
             alt=""
             className="absolute inset-0 w-full h-full object-cover"
-            initial={{ scale: 1.1 }}
+            initial={{ scale: 1.08 }}
             animate={{ scale: 1 }}
             transition={{ duration: 6, ease: "easeOut" }}
           />
 
-          {/* Bottom gradient overlay for text readability */}
-          <div className={`absolute inset-0 bg-gradient-to-t ${slides[current].overlayGradient}`} />
-          <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
-
-          {/* Floating sparkles */}
-          {[...Array(5)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-1 h-1 rounded-full bg-golden-honey"
-              style={{
-                left: `${20 + i * 15}%`,
-                top: `${30 + i * 8}%`,
-              }}
-              animate={{
-                y: [0, -20, 0],
-                opacity: [0, 0.8, 0],
-                scale: [0.5, 1.5, 0.5],
-              }}
-              transition={{
-                duration: 3 + i * 0.5,
-                repeat: Infinity,
-                delay: i * 0.7,
-              }}
-            />
-          ))}
+          {/* Dark gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/5" />
 
           {/* Logo top-left */}
           <div className="absolute top-6 left-6 z-10">
-            <span className="font-display italic text-lg text-primary-foreground/90 tracking-wide">
-              Orel<span className="relative">i<span className="absolute -top-0.5 -right-0.5 w-1 h-1 rounded-full bg-golden-honey" /></span>
+            <span className="text-lg font-bold text-white tracking-tight">
+              Oreli
             </span>
           </div>
 
@@ -110,36 +70,29 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
           {current < 2 && (
             <button
               onClick={onComplete}
-              className="absolute top-6 right-6 z-10 text-sm text-primary-foreground/60 font-sans"
+              className="absolute top-6 right-6 z-10 text-sm text-white/60 font-medium"
             >
               Passer
             </button>
           )}
 
-          {/* Bold typography overlay — bottom-aligned like the reference */}
+          {/* Typography overlay — bottom-aligned */}
           <div className="absolute bottom-0 left-0 right-0 px-8 pb-32 z-10">
             <motion.div
               initial={{ y: 40, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.2, ease: [0.4, 0, 0.2, 1] }}
             >
-              {slides[current].titleLines.map((line, i) => (
-                <h1
-                  key={i}
-                  className={`font-display text-[42px] leading-[1.05] text-primary-foreground ${
-                    line.style === "italic" ? "italic text-primary" : "font-bold"
-                  }`}
-                >
-                  {line.text}
-                </h1>
-              ))}
+              <h1 className="text-[38px] leading-[1.05] text-white font-bold whitespace-pre-line">
+                {slides[current].title}
+              </h1>
             </motion.div>
 
             <motion.p
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.5 }}
-              className="text-primary-foreground/70 text-sm leading-relaxed mt-4 max-w-[280px] font-sans"
+              className="text-white/60 text-[15px] leading-relaxed mt-5 max-w-[280px]"
             >
               {slides[current].subtitle}
             </motion.p>
@@ -154,9 +107,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
                   key={i}
                   animate={{
                     width: i === current ? 24 : 8,
-                    backgroundColor: i === current
-                      ? "hsl(0 100% 70%)"
-                      : "hsla(0, 0%, 100%, 0.3)",
+                    backgroundColor: i === current ? "#fff" : "rgba(255,255,255,0.3)",
                   }}
                   className="h-2 rounded-full"
                   transition={{ duration: 0.3 }}
@@ -168,22 +119,20 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={next}
-                className="w-14 h-14 rounded-full gradient-primary flex items-center justify-center shadow-lg"
+                className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-lg"
               >
-                <svg className="w-6 h-6 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
+                <ArrowRight className="w-6 h-6 text-foreground" />
               </motion.button>
             ) : (
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={onComplete}
-                className="px-8 py-4 rounded-xl gradient-primary text-primary-foreground font-semibold text-base shadow-lg"
+                className="px-8 py-4 rounded-full bg-white text-foreground font-semibold text-base shadow-lg flex items-center gap-2"
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.3 }}
               >
-                Commencer →
+                Commencer <ArrowRight className="w-5 h-5" />
               </motion.button>
             )}
           </div>
