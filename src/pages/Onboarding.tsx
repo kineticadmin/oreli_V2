@@ -1,5 +1,8 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import onboarding1 from "@/assets/onboarding-gift-1.jpg";
+import onboarding2 from "@/assets/onboarding-gift-2.jpg";
+import onboarding3 from "@/assets/onboarding-gift-3.jpg";
 
 interface OnboardingProps {
   onComplete: () => void;
@@ -7,25 +10,37 @@ interface OnboardingProps {
 
 const slides = [
   {
-    bg: "gradient-dark",
-    title: "Trouver le cadeau parfait ne devrait pas être aussi compliqué.",
-    subtitle: "Fini les heures de recherche, les idées en panne, le stress de dernière minute.",
-    titleColor: "text-white",
-    subtitleColor: "text-cream/70",
+    image: onboarding1,
+    titleLines: [
+      { text: "Ton", style: "normal" },
+      { text: "Cadeau.", style: "italic" },
+      { text: "Ton", style: "normal" },
+      { text: "Moment.", style: "italic" },
+    ],
+    subtitle: "Fini les heures de recherche et le stress de dernière minute.",
+    overlayGradient: "from-primary/60 via-secondary/30 to-transparent",
   },
   {
-    bg: "bg-gradient-to-b from-soft-lavender/30 to-cream",
-    title: "Oreli comprend ceux que tu aimes.",
+    image: onboarding2,
+    titleLines: [
+      { text: "On", style: "normal" },
+      { text: "Comprend", style: "italic" },
+      { text: "Ceux que", style: "normal" },
+      { text: "Tu Aimes.", style: "italic" },
+    ],
     subtitle: "Notre IA apprend les goûts de tes proches et propose des cadeaux qui touchent en plein cœur.",
-    titleColor: "text-deep-plum",
-    subtitleColor: "text-muted-foreground",
+    overlayGradient: "from-accent/50 via-primary/20 to-transparent",
   },
   {
-    bg: "gradient-primary",
-    title: "En 60 secondes, le cadeau parfait.",
-    subtitle: "Des artisans locaux, livrés chez toi. Zéro stress.",
-    titleColor: "text-white",
-    subtitleColor: "text-white/80",
+    image: onboarding3,
+    titleLines: [
+      { text: "60", style: "normal" },
+      { text: "Secondes.", style: "italic" },
+      { text: "Le Cadeau", style: "normal" },
+      { text: "Parfait.", style: "italic" },
+    ],
+    subtitle: "Des artisans locaux à Bruxelles, livrés chez toi. Zéro stress.",
+    overlayGradient: "from-secondary/60 via-golden-honey/30 to-transparent",
   },
 ];
 
@@ -38,119 +53,135 @@ const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
   };
 
   return (
-    <div className="app-container h-screen relative overflow-hidden">
+    <div className="app-container h-screen relative overflow-hidden bg-foreground">
       <AnimatePresence mode="wait">
         <motion.div
           key={current}
-          initial={{ opacity: 0, x: 80 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -80 }}
-          transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-          className={`absolute inset-0 flex flex-col items-center justify-center px-8 ${slides[current].bg}`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+          className="absolute inset-0"
         >
-          {/* Decorative elements */}
-          {current === 0 && (
-            <div className="mb-8 relative">
-              <motion.div
-                animate={{ y: [0, -8, 0] }}
-                transition={{ duration: 3, repeat: Infinity }}
-                className="text-6xl"
-              >
-                😰
-              </motion.div>
-              {["❓", "❓", "❓"].map((q, i) => (
-                <motion.span
-                  key={i}
-                  className="absolute text-2xl"
-                  style={{ top: -20 + i * 10, left: 60 + i * 20 }}
-                  animate={{ y: [0, -6, 0], opacity: [0.4, 1, 0.4] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: i * 0.5 }}
-                >
-                  {q}
-                </motion.span>
-              ))}
-            </div>
-          )}
+          {/* Full-bleed background image */}
+          <motion.img
+            src={slides[current].image}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+            initial={{ scale: 1.1 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 6, ease: "easeOut" }}
+          />
 
-          {current === 1 && (
-            <div className="mb-8 relative">
-              <motion.div
-                className="w-24 h-24 rounded-full gradient-magic flex items-center justify-center"
-                animate={{ scale: [1, 1.15, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                <span className="text-4xl">✨</span>
-              </motion.div>
-              {[0, 1, 2, 3].map((i) => (
-                <motion.span
-                  key={i}
-                  className="absolute text-lg"
-                  style={{
-                    top: Math.sin(i * 1.5) * 50 - 10,
-                    left: Math.cos(i * 1.5) * 60 + 30,
-                  }}
-                  animate={{
-                    y: [0, -12, 0],
-                    opacity: [0.3, 0.8, 0.3],
-                  }}
-                  transition={{ duration: 3, repeat: Infinity, delay: i * 0.7 }}
-                >
-                  🎁
-                </motion.span>
-              ))}
-            </div>
-          )}
+          {/* Bottom gradient overlay for text readability */}
+          <div className={`absolute inset-0 bg-gradient-to-t ${slides[current].overlayGradient}`} />
+          <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
 
-          {current === 2 && (
+          {/* Floating sparkles */}
+          {[...Array(5)].map((_, i) => (
             <motion.div
-              className="mb-8 text-7xl"
-              animate={{ rotateY: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
-              transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+              key={i}
+              className="absolute w-1 h-1 rounded-full bg-golden-honey"
+              style={{
+                left: `${20 + i * 15}%`,
+                top: `${30 + i * 8}%`,
+              }}
+              animate={{
+                y: [0, -20, 0],
+                opacity: [0, 0.8, 0],
+                scale: [0.5, 1.5, 0.5],
+              }}
+              transition={{
+                duration: 3 + i * 0.5,
+                repeat: Infinity,
+                delay: i * 0.7,
+              }}
+            />
+          ))}
+
+          {/* Logo top-left */}
+          <div className="absolute top-6 left-6 z-10">
+            <span className="font-display italic text-lg text-primary-foreground/90 tracking-wide">
+              Orel<span className="relative">i<span className="absolute -top-0.5 -right-0.5 w-1 h-1 rounded-full bg-golden-honey" /></span>
+            </span>
+          </div>
+
+          {/* Skip button top-right */}
+          {current < 2 && (
+            <button
+              onClick={onComplete}
+              className="absolute top-6 right-6 z-10 text-sm text-primary-foreground/60 font-sans"
             >
-              🎁
-            </motion.div>
+              Passer
+            </button>
           )}
 
-          <h1
-            className={`font-display text-[28px] leading-tight font-bold text-center mb-4 ${slides[current].titleColor}`}
-          >
-            {slides[current].title}
-          </h1>
-          <p
-            className={`text-center text-base leading-relaxed max-w-[300px] ${slides[current].subtitleColor}`}
-          >
-            {slides[current].subtitle}
-          </p>
+          {/* Bold typography overlay — bottom-aligned like the reference */}
+          <div className="absolute bottom-0 left-0 right-0 px-8 pb-32 z-10">
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.2, ease: [0.4, 0, 0.2, 1] }}
+            >
+              {slides[current].titleLines.map((line, i) => (
+                <h1
+                  key={i}
+                  className={`font-display text-[42px] leading-[1.05] text-primary-foreground ${
+                    line.style === "italic" ? "italic text-primary" : "font-bold"
+                  }`}
+                >
+                  {line.text}
+                </h1>
+              ))}
+            </motion.div>
+
+            <motion.p
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+              className="text-primary-foreground/70 text-sm leading-relaxed mt-4 max-w-[280px] font-sans"
+            >
+              {slides[current].subtitle}
+            </motion.p>
+          </div>
 
           {/* Bottom controls */}
-          <div className="absolute bottom-12 left-0 right-0 flex flex-col items-center gap-6 px-8">
+          <div className="absolute bottom-8 left-0 right-0 flex items-center justify-between px-8 z-20">
             {/* Pagination dots */}
             <div className="flex gap-2">
               {[0, 1, 2].map((i) => (
-                <div
+                <motion.div
                   key={i}
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    i === current
-                      ? "w-6 bg-primary"
-                      : "w-2 bg-cream/40"
-                  }`}
+                  animate={{
+                    width: i === current ? 24 : 8,
+                    backgroundColor: i === current
+                      ? "hsl(0 100% 70%)"
+                      : "hsla(0, 0%, 100%, 0.3)",
+                  }}
+                  className="h-2 rounded-full"
+                  transition={{ duration: 0.3 }}
                 />
               ))}
             </div>
 
             {current < 2 ? (
-              <button
+              <motion.button
+                whileTap={{ scale: 0.95 }}
                 onClick={next}
-                className="text-base font-semibold tracking-wide"
-                style={{ color: current === 0 ? "hsl(30 100% 97%)" : "hsl(0 100% 70%)" }}
+                className="w-14 h-14 rounded-full gradient-primary flex items-center justify-center shadow-lg"
               >
-                Suivant →
-              </button>
+                <svg className="w-6 h-6 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </motion.button>
             ) : (
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={onComplete}
-                className="w-full py-4 rounded-xl bg-white text-primary font-semibold text-lg"
+                className="px-8 py-4 rounded-xl gradient-primary text-primary-foreground font-semibold text-base shadow-lg"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.3 }}
               >
                 Commencer →
               </motion.button>
