@@ -109,7 +109,7 @@
 
   /* Mobile app container */
   .app-container {
-    @apply max-w-[430px] mx-auto min-h-screen relative overflow-hidden;
+    @apply max-w-[430px] mx-auto min-h-screen relative;
   }
 
   /* Shimmer animation */
