@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, X, Send } from "lucide-react";
+import { ArrowLeft, X, Send, Gift, Sparkles, Heart, Star, Calendar, Clock, Search, Eye, ChevronRight } from "lucide-react";
 import { closeOnes, occasions, products } from "@/data/mockData";
 
-interface GiftFlowProps {
+export interface GiftFlowProps {
   preselectedPerson?: string;
   onComplete: (data: GiftFlowData) => void;
   onClose: () => void;
@@ -18,45 +18,50 @@ export interface GiftFlowData {
   surpriseLevel: string;
 }
 
-type MessageRole = "oreli" | "user" | "choices" | "products";
+type MessageRole = "oreli" | "user" | "choices" | "products" | "summary";
 
 interface ChatMessage {
   id: string;
   role: MessageRole;
   text?: string;
-  choices?: { id: string; emoji?: string; label: string; sub?: string }[];
+  choices?: { id: string; icon?: React.ReactNode; label: string; sub?: string }[];
   products?: typeof products;
   field?: string;
+  summaryData?: { budget: string; delivery: string; person: string };
 }
 
 const budgetChoices = [
-  { id: "30", emoji: "💰", label: "~30€", sub: "Un geste attentionné" },
-  { id: "50", emoji: "💰", label: "~50€", sub: "Le juste milieu" },
-  { id: "80", emoji: "💎", label: "~80€", sub: "Quelque chose de spécial" },
-  { id: "100", emoji: "👑", label: "~100€+", sub: "Faire vraiment plaisir" },
+  { id: "30", icon: <span className="text-sm font-semibold text-primary">€</span>, label: "~30€", sub: "Un geste attentionné" },
+  { id: "50", icon: <span className="text-sm font-semibold text-primary">€€</span>, label: "~50€", sub: "Le juste milieu" },
+  { id: "80", icon: <Star className="w-4 h-4 text-primary" />, label: "~80€", sub: "Quelque chose de spécial" },
+  { id: "100", icon: <Sparkles className="w-4 h-4 text-primary" />, label: "~100€+", sub: "Faire vraiment plaisir" },
 ];
 
 const deliveryChoices = [
-  { id: "today", emoji: "⚡", label: "Aujourd'hui", sub: "Express" },
-  { id: "tomorrow", emoji: "📦", label: "Demain", sub: "" },
-  { id: "week", emoji: "📅", label: "Cette semaine", sub: "" },
+  { id: "today", icon: <Clock className="w-4 h-4 text-primary" />, label: "Aujourd'hui", sub: "Express" },
+  { id: "tomorrow", icon: <Calendar className="w-4 h-4 text-primary" />, label: "Demain", sub: "" },
+  { id: "week", icon: <Calendar className="w-4 h-4 text-muted-foreground" />, label: "Cette semaine", sub: "" },
 ];
 
 const surpriseChoices = [
-  { id: "total", emoji: "🎁", label: "Surprise Totale", sub: "Fais-moi confiance, je m'occupe de tout" },
-  { id: "guided", emoji: "🔍", label: "Surprise Guidée", sub: "Montre-moi des options, je choisis" },
-  { id: "choose", emoji: "🎯", label: "Je Choisis", sub: "Je veux voir une sélection" },
+  { id: "total", icon: <Gift className="w-4 h-4 text-[hsl(var(--lavender))]" />, label: "Surprise Totale", sub: "Je m'occupe de tout" },
+  { id: "guided", icon: <Eye className="w-4 h-4 text-primary" />, label: "Surprise Guidée", sub: "Montre-moi des options" },
+  { id: "choose", icon: <Search className="w-4 h-4 text-foreground" />, label: "Je Choisis", sub: "Je veux voir une sélection" },
 ];
 
 const occasionChoices = occasions.map((o) => ({
   id: o.label,
-  emoji: o.emoji,
+  icon: <span className="text-base">{o.emoji}</span>,
   label: o.label,
 }));
 
 const personChoices = closeOnes.map((p) => ({
   id: p.id,
-  emoji: p.avatar,
+  icon: (
+    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+      <span className="text-xs font-semibold text-primary">{p.avatar}</span>
+    </div>
+  ),
   label: p.name,
   sub: p.relationship,
 }));
@@ -68,7 +73,10 @@ const GiftFlow: React.FC<GiftFlowProps> = ({ preselectedPerson, onComplete, onCl
   });
   const [currentStep, setCurrentStep] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
+  const [inputValue, setInputValue] = useState("");
+  const [currentField, setCurrentField] = useState<string>("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const steps = [
     { field: "personId", skip: !!preselectedPerson },
@@ -98,17 +106,18 @@ const GiftFlow: React.FC<GiftFlowProps> = ({ preselectedPerson, onComplete, onCl
     if (!step) return;
 
     const personName = extraContext?.personName || getPersonName(data.personId || "");
+    setCurrentField(step.field);
 
     switch (step.field) {
       case "personId":
         simulateTyping(() => {
-          addMessage({ role: "oreli", text: "Bonjour ! ✨ À qui veux-tu offrir un cadeau ?" });
+          addMessage({ role: "oreli", text: "Bonjour ! À qui souhaites-tu offrir un cadeau ?" });
           setTimeout(() => {
             addMessage({
               role: "choices",
               choices: [
                 ...personChoices,
-                { id: "new", emoji: "+", label: "Quelqu'un d'autre" },
+                { id: "new", icon: <Heart className="w-4 h-4 text-primary" />, label: "Quelqu'un d'autre" },
               ],
               field: "personId",
             });
@@ -119,7 +128,7 @@ const GiftFlow: React.FC<GiftFlowProps> = ({ preselectedPerson, onComplete, onCl
         simulateTyping(() => {
           addMessage({
             role: "oreli",
-            text: `Super choix ! ${personName} a de la chance 💝 Quel budget as-tu en tête ?`,
+            text: `${personName} a de la chance ! Quel budget as-tu en tête ?`,
           });
           setTimeout(() => {
             addMessage({ role: "choices", choices: budgetChoices, field: "budget" });
@@ -130,7 +139,7 @@ const GiftFlow: React.FC<GiftFlowProps> = ({ preselectedPerson, onComplete, onCl
         simulateTyping(() => {
           addMessage({
             role: "oreli",
-            text: "Parfait ! C'est pour quelle occasion ? 🎉",
+            text: "Parfait ! C'est pour quelle occasion ?",
           });
           setTimeout(() => {
             addMessage({ role: "choices", choices: occasionChoices, field: "occasion" });
@@ -141,7 +150,7 @@ const GiftFlow: React.FC<GiftFlowProps> = ({ preselectedPerson, onComplete, onCl
         simulateTyping(() => {
           addMessage({
             role: "oreli",
-            text: "Tu en as besoin pour quand ? ⏰",
+            text: "Tu en as besoin pour quand ?",
           });
           setTimeout(() => {
             addMessage({ role: "choices", choices: deliveryChoices, field: "deliveryDate" });
@@ -152,7 +161,7 @@ const GiftFlow: React.FC<GiftFlowProps> = ({ preselectedPerson, onComplete, onCl
         simulateTyping(() => {
           addMessage({
             role: "oreli",
-            text: "Dernière question ! Comment veux-tu que je t'aide ? 🎁",
+            text: "Dernière question : quel niveau de surprise souhaites-tu ?",
           });
           setTimeout(() => {
             addMessage({ role: "choices", choices: surpriseChoices, field: "surpriseLevel" });
@@ -162,7 +171,6 @@ const GiftFlow: React.FC<GiftFlowProps> = ({ preselectedPerson, onComplete, onCl
     }
   };
 
-  // Start conversation
   useEffect(() => {
     const firstStep = preselectedPerson ? 1 : 0;
     setCurrentStep(firstStep);
@@ -172,10 +180,11 @@ const GiftFlow: React.FC<GiftFlowProps> = ({ preselectedPerson, onComplete, onCl
       simulateTyping(() => {
         addMessage({
           role: "oreli",
-          text: `Tu veux offrir un cadeau à ${name} ? Quelle belle idée ! 💝 Quel budget as-tu en tête ?`,
+          text: `Tu veux offrir un cadeau à ${name} ? Quelle belle idée ! Quel budget as-tu en tête ?`,
         });
         setTimeout(() => {
           addMessage({ role: "choices", choices: budgetChoices, field: "budget" });
+          setCurrentField("budget");
         }, 300);
       });
     } else {
@@ -186,12 +195,13 @@ const GiftFlow: React.FC<GiftFlowProps> = ({ preselectedPerson, onComplete, onCl
 
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+      }, 100);
     }
   }, [messages, isTyping]);
 
-  const handleChoice = (field: string, choiceId: string, choiceLabel: string) => {
-    // Add user reply bubble
+  const processChoice = (field: string, choiceId: string, choiceLabel: string) => {
     addMessage({ role: "user", text: choiceLabel });
 
     const newData = { ...data };
@@ -219,13 +229,11 @@ const GiftFlow: React.FC<GiftFlowProps> = ({ preselectedPerson, onComplete, onCl
 
     setData(newData);
 
-    // Find next non-skipped step
     while (nextStep < steps.length && steps[nextStep].skip) {
       nextStep++;
     }
 
     if (field === "surpriseLevel") {
-      // Final step — handle based on surprise level
       handleSurpriseOutcome(choiceId, newData);
     } else {
       setCurrentStep(nextStep);
@@ -235,83 +243,70 @@ const GiftFlow: React.FC<GiftFlowProps> = ({ preselectedPerson, onComplete, onCl
     }
   };
 
+  const handleChoice = (field: string, choiceId: string, choiceLabel: string) => {
+    processChoice(field, choiceId, choiceLabel);
+  };
+
+  const handleTextSubmit = () => {
+    const text = inputValue.trim();
+    if (!text || !currentField) return;
+    setInputValue("");
+    processChoice(currentField, text, text);
+  };
+
   const handleSurpriseOutcome = (level: string, finalData: Partial<GiftFlowData>) => {
     const personName = getPersonName(finalData.personId || "");
     const maxBudget = finalData.budget?.[1] || 80;
-
     const filteredProducts = products.filter((p) => p.price <= maxBudget + 20);
+    const budgetLabel = `~${finalData.budget?.[1] ? finalData.budget[1] - 20 : 50}€`;
+    const deliveryLabel = finalData.deliveryDate === "today" ? "Aujourd'hui" : finalData.deliveryDate === "tomorrow" ? "Demain" : "Cette semaine";
 
     if (level === "total") {
-      // Total surprise — no products shown, just confirm
       simulateTyping(() => {
         addMessage({
           role: "oreli",
-          text: `C'est parti ! 🎉 Je m'occupe de tout pour ${personName}. Je vais sélectionner le cadeau parfait basé sur ses goûts et te l'envoyer directement.`,
+          text: `C'est parti ! Je m'occupe de tout pour ${personName}. Une magnifique surprise sera livrée. Prêt(e) à valider ?`,
         });
         setTimeout(() => {
           addMessage({
-            role: "oreli",
-            text: "Ta surprise est prête à être lancée ! Confirme pour passer au paiement 💝",
+            role: "summary",
+            summaryData: { budget: budgetLabel, delivery: deliveryLabel, person: personName },
+            field: "confirm_total",
           });
-          setTimeout(() => {
-            addMessage({
-              role: "choices",
-              choices: [
-                { id: "confirm", emoji: "✨", label: "Lancer la surprise !", sub: "" },
-                { id: "change", emoji: "🔄", label: "Changer d'avis", sub: "" },
-              ],
-              field: "confirm_total",
-            });
-          }, 300);
-        }, 600);
+        }, 400);
       }, 1200);
     } else if (level === "guided") {
-      // Guided — show max 3 products
       simulateTyping(() => {
         addMessage({
           role: "oreli",
-          text: `Voici mes 3 meilleures suggestions pour ${personName} 💝 Elles correspondent parfaitement à tes critères !`,
+          text: `Voici mes 3 meilleures recommandations, spécialement sélectionnées :`,
         });
         setTimeout(() => {
-          addMessage({
-            role: "products",
-            products: filteredProducts.slice(0, 3),
-          });
+          addMessage({ role: "products", products: filteredProducts.slice(0, 3) });
         }, 400);
       }, 1500);
     } else {
-      // Choose — show larger selection
       simulateTyping(() => {
         addMessage({
           role: "oreli",
-          text: `Voici une sélection de cadeaux pour ${personName} 🎁 Tous filtrés selon tes préférences. À toi de choisir !`,
+          text: `Voici une sélection de cadeaux pour ${personName}, filtrés selon tes préférences :`,
         });
         setTimeout(() => {
-          addMessage({
-            role: "products",
-            products: filteredProducts,
-          });
+          addMessage({ role: "products", products: filteredProducts });
         }, 400);
       }, 1500);
     }
   };
 
-  const handleConfirmTotal = (choiceId: string) => {
-    if (choiceId === "confirm") {
-      addMessage({ role: "user", text: "Lancer la surprise !" });
-      onComplete({
-        personId: data.personId || "",
-        budget: data.budget || [30, 80],
-        occasion: data.occasion || "",
-        deliveryDate: data.deliveryDate || "",
-        surpriseLevel: "total",
-      });
-    } else {
-      addMessage({ role: "user", text: "Changer d'avis" });
-      // Go back to surprise level step
-      setCurrentStep(4);
-      setTimeout(() => askQuestion(4), 400);
-    }
+  const handleConfirmTotal = () => {
+    addMessage({ role: "user", text: "Aller au paiement" });
+    onComplete({
+      personId: data.personId || "",
+      budget: data.budget || [30, 80],
+      occasion: data.occasion || "",
+      deliveryDate: data.deliveryDate || "",
+      surpriseLevel: "total",
+    });
   };
 
   const totalSteps = steps.filter((s) => !s.skip).length;
@@ -321,26 +316,30 @@ const GiftFlow: React.FC<GiftFlowProps> = ({ preselectedPerson, onComplete, onCl
   return (
     <div className="app-container h-screen flex flex-col bg-background">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-2 flex-shrink-0">
+      <div className="flex items-center justify-between px-4 pt-4 pb-3 flex-shrink-0 border-b border-border/40">
         <motion.button whileTap={{ scale: 0.9 }} onClick={onClose}>
-          <ArrowLeft className="w-6 h-6 text-foreground" />
+          <ArrowLeft className="w-5 h-5 text-foreground" />
         </motion.button>
-        <div className="flex-1 mx-4 flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full gradient-magic flex items-center justify-center">
-            <span className="text-xs">✨</span>
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-full gradient-magic flex items-center justify-center">
+            <Sparkles className="w-4 h-4 text-white" />
           </div>
-          <span className="font-display italic text-sm text-foreground">Oreli</span>
+          <span className="font-display font-bold text-base text-foreground">Oreli</span>
         </div>
-        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden max-w-[100px]">
+        <motion.button whileTap={{ scale: 0.9 }} onClick={onClose}>
+          <X className="w-5 h-5 text-muted-foreground" />
+        </motion.button>
+      </div>
+
+      {/* Progress */}
+      <div className="px-4 py-2 flex-shrink-0">
+        <div className="h-1 bg-muted rounded-full overflow-hidden">
           <motion.div
             className="h-full rounded-full gradient-primary"
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
           />
         </div>
-        <motion.button whileTap={{ scale: 0.9 }} onClick={onClose} className="ml-3">
-          <X className="w-5 h-5 text-muted-foreground" />
-        </motion.button>
       </div>
 
       {/* Chat area */}
@@ -349,15 +348,16 @@ const GiftFlow: React.FC<GiftFlowProps> = ({ preselectedPerson, onComplete, onCl
           {messages.map((msg) => (
             <motion.div
               key={msg.id}
-              initial={{ opacity: 0, y: 12, scale: 0.95 }}
+              initial={{ opacity: 0, y: 12, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.3 }}
               className="mb-3"
             >
+              {/* Oreli message */}
               {msg.role === "oreli" && (
-                <div className="flex gap-2 items-start max-w-[85%]">
+                <div className="flex gap-2.5 items-start max-w-[85%]">
                   <div className="w-7 h-7 rounded-full gradient-magic flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-[10px]">✨</span>
+                    <Sparkles className="w-3 h-3 text-white" />
                   </div>
                   <div className="bg-card rounded-2xl rounded-tl-md px-4 py-3 shadow-card">
                     <p className="text-sm text-foreground leading-relaxed">{msg.text}</p>
@@ -365,14 +365,16 @@ const GiftFlow: React.FC<GiftFlowProps> = ({ preselectedPerson, onComplete, onCl
                 </div>
               )}
 
+              {/* User message */}
               {msg.role === "user" && (
                 <div className="flex justify-end">
                   <div className="gradient-primary rounded-2xl rounded-tr-md px-4 py-3 max-w-[75%]">
-                    <p className="text-sm text-primary-foreground">{msg.text}</p>
+                    <p className="text-sm text-primary-foreground font-medium">{msg.text}</p>
                   </div>
                 </div>
               )}
 
+              {/* Choice bubbles */}
               {msg.role === "choices" && msg.choices && (
                 <div className="pl-9 flex flex-wrap gap-2 mt-1">
                   {msg.choices.map((choice) => (
@@ -381,18 +383,18 @@ const GiftFlow: React.FC<GiftFlowProps> = ({ preselectedPerson, onComplete, onCl
                       whileTap={{ scale: 0.95 }}
                       onClick={() => {
                         if (msg.field === "confirm_total") {
-                          handleConfirmTotal(choice.id);
+                          handleConfirmTotal();
                         } else {
-                          handleChoice(msg.field || "", choice.id, `${choice.emoji || ""} ${choice.label}`);
+                          handleChoice(msg.field || "", choice.id, choice.label);
                         }
                       }}
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border-2 border-primary/20 hover:border-primary shadow-card transition-all text-left"
+                      className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-card border border-border hover:border-primary/40 shadow-sm transition-all text-left"
                     >
-                      {choice.emoji && <span className="text-lg">{choice.emoji}</span>}
+                      {choice.icon && <span className="flex-shrink-0">{choice.icon}</span>}
                       <div>
-                        <p className="text-sm font-semibold text-foreground">{choice.label}</p>
+                        <p className="text-sm font-medium text-foreground">{choice.label}</p>
                         {choice.sub && (
-                          <p className="text-[11px] text-muted-foreground">{choice.sub}</p>
+                          <p className="text-[11px] text-muted-foreground leading-tight">{choice.sub}</p>
                         )}
                       </div>
                     </motion.button>
@@ -400,55 +402,80 @@ const GiftFlow: React.FC<GiftFlowProps> = ({ preselectedPerson, onComplete, onCl
                 </div>
               )}
 
-              {msg.role === "products" && msg.products && (
-                <div className="pl-9 flex flex-col gap-3 mt-2">
-                  {msg.products.map((product, idx) => (
-                    <motion.div
-                      key={product.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.15 }}
-                      className="bg-card rounded-xl shadow-card overflow-hidden"
-                    >
-                      <img
-                        src={product.images[0]}
-                        alt={product.name}
-                        className="w-full h-32 object-cover"
-                      />
-                      <div className="p-3">
-                        <div className="flex items-center gap-2 mb-1">
-                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full gradient-celebration animate-fill-bar"
-                              style={{ "--fill-width": `${product.matchScore}%` } as React.CSSProperties}
-                            />
-                          </div>
-                          <span className="text-xs font-semibold text-secondary">
-                            {product.matchScore}%
-                          </span>
-                        </div>
-                        <h3 className="font-display text-sm font-bold leading-tight">
-                          {product.name}
-                        </h3>
-                        <p className="text-[11px] text-muted-foreground mt-1 italic">
-                          {product.aiJustification}
-                        </p>
-                        <div className="flex items-center justify-between mt-2">
-                          <span className="font-bold text-foreground">{product.price}€</span>
-                          <span className="text-[10px] text-muted-foreground">
-                            {product.seller} · ⭐ {product.rating}
-                          </span>
-                        </div>
-                        <motion.button
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => onSelectProduct(product.id)}
-                          className="w-full mt-2 py-2.5 rounded-xl gradient-primary text-primary-foreground font-semibold text-sm"
-                        >
-                          Offrir celui-ci 🎁
-                        </motion.button>
+              {/* Surprise Totale summary card */}
+              {msg.role === "summary" && msg.summaryData && (
+                <div className="pl-9 mt-2">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="rounded-2xl border-2 border-primary/20 bg-card p-5 shadow-card"
+                  >
+                    <div className="flex flex-col items-center text-center">
+                      <div className="w-14 h-14 rounded-full bg-[hsl(var(--lavender))]/15 flex items-center justify-center mb-3">
+                        <Gift className="w-6 h-6 text-[hsl(var(--lavender))]" />
                       </div>
-                    </motion.div>
-                  ))}
+                      <h3 className="font-display font-bold text-lg text-foreground">Surprise Totale</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Budget: {msg.summaryData.budget} · Livraison: {msg.summaryData.delivery}
+                      </p>
+                      <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleConfirmTotal}
+                        className="w-full mt-4 py-3 rounded-xl gradient-primary text-primary-foreground font-semibold text-sm"
+                      >
+                        Aller au paiement
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                </div>
+              )}
+
+              {/* Product cards — horizontal scroll */}
+              {msg.role === "products" && msg.products && (
+                <div className="pl-9 mt-2 -mr-4">
+                  <div className="flex gap-3 overflow-x-auto pb-2 pr-4 snap-x snap-mandatory scrollbar-hide">
+                    {msg.products.map((product, idx) => (
+                      <motion.div
+                        key={product.id}
+                        initial={{ opacity: 0, x: 30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.12 }}
+                        className="flex-shrink-0 w-[220px] snap-start rounded-2xl overflow-hidden shadow-card cursor-pointer group"
+                        onClick={() => onSelectProduct(product.id)}
+                      >
+                        {/* Full background image */}
+                        <div className="relative h-[260px]">
+                          <img
+                            src={product.images[0]}
+                            alt={product.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          {/* Match badge */}
+                          <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm flex items-center gap-1">
+                            <Sparkles className="w-3 h-3 text-primary" />
+                            <span className="text-xs font-semibold text-foreground">{product.matchScore}% match</span>
+                          </div>
+                          {/* Bottom gradient overlay */}
+                          <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+                          {/* Content over image */}
+                          <div className="absolute inset-x-0 bottom-0 p-3.5">
+                            <h3 className="font-display font-bold text-sm text-white leading-tight line-clamp-2">
+                              {product.name}
+                            </h3>
+                            <p className="text-[11px] text-white/70 mt-1 line-clamp-2 leading-snug">
+                              {product.aiJustification}
+                            </p>
+                            <div className="flex items-center justify-between mt-2.5">
+                              <span className="font-bold text-white text-base">{product.price}€</span>
+                              <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-white text-xs font-medium flex items-center gap-1">
+                                Voir <ChevronRight className="w-3 h-3" />
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
                 </div>
               )}
             </motion.div>
@@ -460,30 +487,52 @@ const GiftFlow: React.FC<GiftFlowProps> = ({ preselectedPerson, onComplete, onCl
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex gap-2 items-center mb-3"
+            className="flex gap-2.5 items-center mb-3"
           >
             <div className="w-7 h-7 rounded-full gradient-magic flex items-center justify-center flex-shrink-0">
-              <span className="text-[10px]">✨</span>
+              <Sparkles className="w-3 h-3 text-white" />
             </div>
-            <div className="bg-card rounded-2xl rounded-tl-md px-4 py-3 shadow-card flex gap-1">
+            <div className="bg-card rounded-2xl rounded-tl-md px-4 py-3 shadow-card flex gap-1.5">
               <motion.span
-                className="w-2 h-2 rounded-full bg-accent"
+                className="w-2 h-2 rounded-full bg-muted-foreground/40"
                 animate={{ y: [0, -4, 0] }}
                 transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
               />
               <motion.span
-                className="w-2 h-2 rounded-full bg-accent"
+                className="w-2 h-2 rounded-full bg-muted-foreground/40"
                 animate={{ y: [0, -4, 0] }}
                 transition={{ duration: 0.6, repeat: Infinity, delay: 0.15 }}
               />
               <motion.span
-                className="w-2 h-2 rounded-full bg-accent"
+                className="w-2 h-2 rounded-full bg-muted-foreground/40"
                 animate={{ y: [0, -4, 0] }}
                 transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }}
               />
             </div>
           </motion.div>
         )}
+      </div>
+
+      {/* Text input */}
+      <div className="flex-shrink-0 px-4 pb-4 pt-2 border-t border-border/40 bg-background">
+        <div className="flex items-center gap-2 bg-card rounded-full px-4 py-2 shadow-sm border border-border/60">
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleTextSubmit()}
+            placeholder="Écris un message..."
+            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+          />
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={handleTextSubmit}
+            className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center flex-shrink-0"
+          >
+            <Send className="w-4 h-4 text-primary-foreground" />
+          </motion.button>
+        </div>
       </div>
     </div>
   );
