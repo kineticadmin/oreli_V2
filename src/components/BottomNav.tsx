@@ -17,7 +17,7 @@ const tabs = [
 
 const BottomNav: React.FC<BottomNavProps> = ({ active, onNavigate }) => {
   return (
-    <div className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-warm-white border-t border-blush-pink z-50">
+    <div className="fixed bottom-4 left-4 right-4 max-w-[400px] mx-auto bg-card/70 backdrop-blur-xl border border-border/40 rounded-2xl shadow-modal z-50">
       <div className="flex items-center justify-around py-2 pb-[max(8px,env(safe-area-inset-bottom))]">
         {tabs.map((tab) => {
           const Icon = tab.icon;
