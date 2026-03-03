@@ -70,7 +70,11 @@ const Index = () => {
               preselectedPerson={selectedPerson}
               onComplete={(data) => {
                 setSelectedPerson(data.personId);
-                setScreen("recommendations");
+                setScreen("checkout");
+              }}
+              onSelectProduct={(id) => {
+                setSelectedProduct(id);
+                setScreen("product");
               }}
               onClose={() => setScreen("home")}
             />
