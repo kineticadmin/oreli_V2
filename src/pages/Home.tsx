@@ -1,6 +1,6 @@
-import React from "react";
-import { motion } from "framer-motion";
-import { Bell, Sparkles, ArrowRight } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Bell, Sparkles, ArrowRight, Heart, Gift, Calendar } from "lucide-react";
 import { closeOnes, products } from "@/data/mockData";
 
 interface HomeProps {
@@ -9,14 +9,57 @@ interface HomeProps {
   onAddCloseOne: () => void;
 }
 
+const heroSlides = [
+  {
+    id: 1,
+    image: "https://images.unsplash.com/photo-1549465220-1a8b9238f760?w=800&q=80",
+    icon: Sparkles,
+    badge: "IA Cadeau",
+    title: "Offrir un cadeau",
+    subtitle: "Le cadeau parfait en 60 secondes",
+    cta: "C'est parti",
+    action: "gift" as const,
+  },
+  {
+    id: 2,
+    image: "https://images.unsplash.com/photo-1462275646964-a0e3c11f18a6?w=800&q=80",
+    icon: Heart,
+    badge: "Fête des mères",
+    title: "Bientôt la fête des mères",
+    subtitle: "Explorez nos sélections exclusives",
+    cta: "Explorer",
+    action: "gift" as const,
+  },
+  {
+    id: 3,
+    image: "https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&q=80",
+    icon: Gift,
+    badge: "Nouveautés",
+    title: "Cadeaux d'exception",
+    subtitle: "Notre sélection premium du moment",
+    cta: "Découvrir",
+    action: "gift" as const,
+  },
+];
+
 const Home: React.FC<HomeProps> = ({ onStartGiftFlow, onProductTap, onAddCloseOne }) => {
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  // Auto-advance slides
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <div className="app-container pb-24 overflow-y-auto h-screen bg-background">
       {/* Top Bar */}
       <div className="flex items-center justify-between px-6 pt-6 pb-3">
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 rounded-full gradient-celebration flex items-center justify-center">
-            <span className="text-lg">🎁</span>
+            <Gift className="w-5 h-5 text-primary-foreground" />
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -44,44 +87,69 @@ const Home: React.FC<HomeProps> = ({ onStartGiftFlow, onProductTap, onAddCloseOn
         </p>
       </div>
 
-      {/* Primary CTA — large immersive card */}
-      <motion.div
-        whileTap={{ scale: 0.97 }}
-        className="mx-6 mt-7 rounded-xl overflow-hidden cursor-pointer relative"
-        onClick={() => onStartGiftFlow()}
-      >
-        <div className="gradient-primary p-6 pb-7 relative overflow-hidden">
-          {/* Floating decorative elements */}
-          <motion.div
-            className="absolute -right-4 -top-4 w-32 h-32 rounded-full bg-primary-foreground/10"
-            animate={{ scale: [1, 1.1, 1], rotate: [0, 5, 0] }}
-            transition={{ duration: 5, repeat: Infinity }}
-          />
-          <motion.div
-            className="absolute right-8 bottom-4 text-4xl opacity-30"
-            animate={{ y: [0, -6, 0], rotate: [0, 10, -10, 0] }}
-            transition={{ duration: 4, repeat: Infinity }}
-          >
-            🎁
-          </motion.div>
+      {/* Hero Slider — immersive full-image cards */}
+      <div className="mx-6 mt-7">
+        <div className="relative rounded-2xl overflow-hidden" style={{ height: 220 }}>
+          <AnimatePresence mode="wait">
+            {heroSlides.map((slide, idx) =>
+              idx === activeSlide ? (
+                <motion.div
+                  key={slide.id}
+                  initial={{ opacity: 0, scale: 1.05 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.97 }}
+                  transition={{ duration: 0.6, ease: "easeInOut" }}
+                  className="absolute inset-0 cursor-pointer"
+                  onClick={() => onStartGiftFlow()}
+                >
+                  {/* Background image */}
+                  <img
+                    src={slide.image}
+                    alt={slide.title}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  {/* Dark gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-black/10" />
 
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-4 h-4 text-primary-foreground/80" />
-              <span className="text-xs text-primary-foreground/80 font-semibold uppercase tracking-wider">IA cadeau</span>
-            </div>
-            <h2 className="font-display italic text-[22px] text-primary-foreground leading-tight mb-1">
-              Offrir un cadeau
-            </h2>
-            <p className="text-primary-foreground/70 text-sm mb-5">
-              Le cadeau parfait en 60 secondes
-            </p>
-            <button className="bg-primary-foreground text-primary font-semibold px-6 py-3 rounded-xl text-sm flex items-center gap-2 shadow-card">
-              C'est parti <ArrowRight className="w-4 h-4" />
-            </button>
+                  {/* Content */}
+                  <div className="relative z-10 h-full flex flex-col justify-end p-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <slide.icon className="w-3.5 h-3.5 text-primary-foreground/90" />
+                      <span className="text-[10px] text-primary-foreground/80 font-semibold uppercase tracking-widest">
+                        {slide.badge}
+                      </span>
+                    </div>
+                    <h2 className="font-display italic text-[24px] text-primary-foreground leading-tight mb-1">
+                      {slide.title}
+                    </h2>
+                    <p className="text-primary-foreground/70 text-sm mb-4">
+                      {slide.subtitle}
+                    </p>
+                    <button className="bg-primary-foreground/95 backdrop-blur-sm text-foreground font-semibold px-5 py-2.5 rounded-full text-sm flex items-center gap-2 shadow-card w-fit">
+                      {slide.cta} <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              ) : null
+            )}
+          </AnimatePresence>
+
+          {/* Dots */}
+          <div className="absolute bottom-3 right-4 z-20 flex gap-1.5">
+            {heroSlides.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={(e) => { e.stopPropagation(); setActiveSlide(idx); }}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  idx === activeSlide
+                    ? "w-5 bg-primary-foreground"
+                    : "w-1.5 bg-primary-foreground/40"
+                }`}
+              />
+            ))}
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Close ones — warmer style */}
       <div className="mt-10 px-6">
