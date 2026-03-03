@@ -13,7 +13,7 @@ const Home: React.FC<HomeProps> = ({ onStartGiftFlow, onProductTap, onAddCloseOn
   return (
     <div className="app-container pb-24 overflow-y-auto h-screen bg-background">
       {/* Top Bar */}
-      <div className="flex items-center justify-between px-5 pt-5 pb-2">
+      <div className="flex items-center justify-between px-6 pt-6 pb-3">
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 rounded-full gradient-celebration flex items-center justify-center">
             <span className="text-lg">🎁</span>
@@ -30,8 +30,8 @@ const Home: React.FC<HomeProps> = ({ onStartGiftFlow, onProductTap, onAddCloseOn
         </div>
       </div>
 
-      {/* Large warm greeting — inspired by "Hello Emily" style */}
-      <div className="px-5 pt-6 pb-2">
+      {/* Large warm greeting */}
+      <div className="px-6 pt-8 pb-3">
         <h1 className="text-[32px] leading-[1.1] text-foreground font-sans font-semibold">
           Bonjour,{" "}
           <span className="font-display italic text-primary">Brunell</span>
@@ -47,7 +47,7 @@ const Home: React.FC<HomeProps> = ({ onStartGiftFlow, onProductTap, onAddCloseOn
       {/* Primary CTA — large immersive card */}
       <motion.div
         whileTap={{ scale: 0.97 }}
-        className="mx-5 mt-5 rounded-xl overflow-hidden cursor-pointer relative"
+        className="mx-6 mt-7 rounded-xl overflow-hidden cursor-pointer relative"
         onClick={() => onStartGiftFlow()}
       >
         <div className="gradient-primary p-6 pb-7 relative overflow-hidden">
@@ -84,7 +84,7 @@ const Home: React.FC<HomeProps> = ({ onStartGiftFlow, onProductTap, onAddCloseOn
       </motion.div>
 
       {/* Close ones — warmer style */}
-      <div className="mt-7 px-5">
+      <div className="mt-10 px-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-base text-foreground">Tes proches</h3>
           <button className="text-xs text-primary font-semibold">Voir tout</button>
@@ -134,7 +134,7 @@ const Home: React.FC<HomeProps> = ({ onStartGiftFlow, onProductTap, onAddCloseOn
       </div>
 
       {/* Curated for you — lifestyle cards */}
-      <div className="mt-7 px-5">
+      <div className="mt-10 px-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-display italic text-xl text-foreground">Sélectionné pour toi</h2>
           <button className="text-xs text-primary font-semibold">Voir tout</button>
@@ -180,7 +180,7 @@ const Home: React.FC<HomeProps> = ({ onStartGiftFlow, onProductTap, onAddCloseOn
       </div>
 
       {/* Upcoming events */}
-      <div className="mt-7 px-5 pb-4">
+      <div className="mt-10 px-6 pb-6">
         <h3 className="font-semibold text-base mb-3 text-foreground">Événements à venir</h3>
         <div className="flex flex-col gap-2.5">
           {closeOnes
