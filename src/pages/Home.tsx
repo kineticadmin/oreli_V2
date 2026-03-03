@@ -77,7 +77,7 @@ const Home: React.FC<HomeProps> = ({ onStartGiftFlow, onProductTap, onAddCloseOn
 
       {/* Hero Slider */}
       <div className="mx-6 mt-6">
-        <div className="relative rounded-2xl overflow-hidden" style={{ height: 240 }}>
+        <div className="relative rounded-2xl overflow-hidden" style={{ height: 320 }}>
           <AnimatePresence mode="wait">
             {heroSlides.map((slide, idx) =>
               idx === activeSlide ? (
