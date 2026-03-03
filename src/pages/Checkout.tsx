@@ -43,7 +43,7 @@ const Checkout: React.FC<CheckoutProps> = ({ productId, onBack, onConfirm }) => 
         </div>
 
         {/* Delivery */}
-        <h3 className="font-semibold text-sm mt-6 mb-2">Adresse de livraison</h3>
+        <h3 className="font-semibold text-sm mt-8 mb-3">Adresse de livraison</h3>
         <div className="p-3 bg-card rounded-lg shadow-card">
           <p className="text-sm font-semibold">Sophie Dupont</p>
           <p className="text-sm text-muted-foreground">Rue de la Loi 42, 1000 Bruxelles</p>
@@ -51,7 +51,7 @@ const Checkout: React.FC<CheckoutProps> = ({ productId, onBack, onConfirm }) => 
         </div>
 
         {/* Payment */}
-        <h3 className="font-semibold text-sm mt-6 mb-2">Paiement</h3>
+        <h3 className="font-semibold text-sm mt-8 mb-3">Paiement</h3>
         <div className="p-3 bg-card rounded-lg shadow-card">
           <div className="flex gap-2 mb-3">
             <button className="flex-1 py-2.5 rounded-lg bg-foreground text-card text-sm font-semibold">
@@ -81,7 +81,7 @@ const Checkout: React.FC<CheckoutProps> = ({ productId, onBack, onConfirm }) => 
         </div>
 
         {/* Gift message preview */}
-        <h3 className="font-semibold text-sm mt-6 mb-2">Message cadeau</h3>
+        <h3 className="font-semibold text-sm mt-8 mb-3">Message cadeau</h3>
         <div className="p-4 bg-cream rounded-lg border border-border">
           <p className="font-display italic text-sm text-foreground">
             "Joyeux anniversaire Maman ! Avec tout mon amour 💝"
@@ -89,7 +89,7 @@ const Checkout: React.FC<CheckoutProps> = ({ productId, onBack, onConfirm }) => 
         </div>
 
         {/* Summary */}
-        <div className="mt-6 space-y-2">
+        <div className="mt-8 space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Sous-total</span>
             <span>{product.price}€</span>
