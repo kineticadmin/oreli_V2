@@ -80,6 +80,14 @@ export const occasions: { iconName: string; label: string }[] = [
 
 export const heroSlides = [
     {
+        id: '0',
+        image: 'https://picsum.photos/seed/lea/800/600',
+        badge: '98% Match',
+        title: 'Le cadeau parfait\npour Léa',
+        subtitle: 'Une sélection sur-mesure pour elle',
+        cta: 'Voir le cadeau',
+    },
+    {
         id: '1',
         image: 'https://picsum.photos/seed/hero1/800/600',
         badge: 'IA Cadeau',
@@ -106,10 +114,10 @@ export const heroSlides = [
 ];
 
 export const budgetOptions = [
-    { id: '30', label: '~30€', sublabel: 'Un geste attentionné', icon: '€' },
-    { id: '50', label: '~50€', sublabel: 'Le juste milieu', icon: '€€' },
-    { id: '80', label: '~80€', sublabel: 'Quelque chose de spécial', icon: '★' },
-    { id: '100', label: '~100€+', sublabel: 'Faire vraiment plaisir', icon: '✦' },
+    { id: '30', label: '30€', sublabel: 'Un geste attentionné', icon: 'coffee' },
+    { id: '50', label: '50€', sublabel: 'Le juste milieu', icon: 'gift' },
+    { id: '80', label: '80€', sublabel: 'Quelque chose de spécial', icon: 'star' },
+    { id: '100', label: '100€+', sublabel: 'Faire vraiment plaisir', icon: 'award' },
 ];
 
 export const deliveryOptions = [

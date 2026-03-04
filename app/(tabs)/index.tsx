@@ -10,7 +10,9 @@ import {
     Image,
     StyleSheet,
     Dimensions,
-    TextInput
+    TextInput,
+    Animated as RNAnimated,
+    LayoutAnimation,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -37,54 +39,40 @@ export default function HomeScreen() {
     const userName = useGiftStore((s) => s.userName);
     const initial = userName.charAt(0).toUpperCase();
 
-    // Typing effect state
-    const [isTyping, setIsTyping] = useState(true);
+    // Typing effect state for bottom CTA
+    const [showBottomCTA, setShowBottomCTA] = useState(false);
+    const [isTypingBottom, setIsTypingBottom] = useState(true);
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setIsTyping(false);
-        }, 2000); // 2 seconds typing indicator
-        return () => clearTimeout(timer);
-    }, []);
+    const scrollX = React.useRef(new RNAnimated.Value(0)).current;
 
     // Find closest event
     const nextEvent = [...closeOnes]
         .filter((p) => p.eventDate && p.daysUntilEvent !== undefined)
         .sort((a, b) => (a.daysUntilEvent ?? 999) - (b.daysUntilEvent ?? 999))[0];
 
-    // Map hero slides to match the reference design (Portrait, title bottom left)
-    const renderHeroSlide = ({ item, index }: { item: typeof heroSlides[0], index: number }) => (
-        <TouchableOpacity
-            activeOpacity={0.9}
-            style={styles.heroCard}
-            onPress={() => {
-                if (index === 0) {
-                    router.push('/gift-flow');
-                } else {
-                    router.push('/(tabs)/gifts');
-                }
-            }}
-        >
-            <ImageBackground source={{ uri: item.image }} style={styles.heroImage} imageStyle={{ borderRadius: Radius['2xl'] }}>
-                <LinearGradient
-                    colors={['transparent', 'rgba(0,0,0,0.8)']}
-                    style={styles.heroGradient}
-                >
-                    <Text style={styles.heroTitle} numberOfLines={2}>{item.title}</Text>
-                    <View style={styles.heroLocation}>
-                        <Feather name="map-pin" size={12} color={Colors.white} />
-                        <Text style={styles.heroSubtitle}>{item.badge}</Text>
-                    </View>
-                </LinearGradient>
-            </ImageBackground>
-        </TouchableOpacity>
-    );
+
 
     return (
         <View style={styles.container}>
             <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: 120 }}
+                scrollEventThrottle={16}
+                onScroll={(e) => {
+                    const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+                    const paddingToBottom = 150;
+                    if (layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom) {
+                        if (!showBottomCTA) {
+                            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                            setShowBottomCTA(true);
+                            setIsTypingBottom(true);
+                            setTimeout(() => {
+                                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                                setIsTypingBottom(false);
+                            }, 2000);
+                        }
+                    }
+                }}
             >
                 {/* Header: Logo, Greeting & Avatar */}
                 <View style={[styles.header, { paddingTop: insets.top + Spacing.md }]}>
@@ -96,34 +84,24 @@ export default function HomeScreen() {
                             style={styles.oreliMessageContainer}
                             activeOpacity={0.8}
                             onPress={() => {
-                                if (!isTyping) {
-                                    if (nextEvent) {
-                                        setSelectedPerson(nextEvent);
-                                        router.push('/gift-flow');
-                                    } else {
-                                        router.push('/gift-flow');
-                                    }
+                                if (nextEvent) {
+                                    setSelectedPerson(nextEvent);
+                                    router.push('/gift-flow');
+                                } else {
+                                    router.push('/gift-flow');
                                 }
                             }}
                         >
                             <View style={styles.oreliMessageAvatar}>
                                 <Text style={styles.oreliMessageAvatarText}>O</Text>
                             </View>
-                            <View style={[styles.oreliMessageBubble, isTyping && styles.typingBubble]}>
-                                {isTyping ? (
-                                    <View style={styles.typingIndicator}>
-                                        <Text style={styles.typingDot}>•</Text>
-                                        <Text style={styles.typingDot}>•</Text>
-                                        <Text style={styles.typingDot}>•</Text>
-                                    </View>
-                                ) : (
-                                    <Text style={styles.oreliMessageText}>
-                                        <Text style={{ fontFamily: Typography.bold }}>Bonjour {userName}, </Text>
-                                        {nextEvent
-                                            ? <Text>c'est l'anniversaire de {nextEvent.name} dans {nextEvent.daysUntilEvent} jours. On lui trouve un cadeau ? <Feather name="gift" size={14} color={Colors.gold} /></Text>
-                                            : <Text>prêt(e) à faire plaisir à tes proches aujourd'hui ? <Feather name="star" size={14} color={Colors.gold} /></Text>}
-                                    </Text>
-                                )}
+                            <View style={styles.oreliMessageBubble}>
+                                <Text style={styles.oreliMessageText}>
+                                    <Text style={{ fontFamily: Typography.bold }}>Bonjour {userName}, </Text>
+                                    {nextEvent
+                                        ? <Text>c'est l'anniversaire de {nextEvent.name} dans {nextEvent.daysUntilEvent} jours. On lui trouve un cadeau ? <Feather name="gift" size={14} color={Colors.gold} /></Text>
+                                        : <Text>prêt(e) à faire plaisir à tes proches aujourd'hui ? <Feather name="star" size={14} color={Colors.gold} /></Text>}
+                                </Text>
                             </View>
                         </TouchableOpacity>
                     </View>
@@ -138,14 +116,67 @@ export default function HomeScreen() {
 
                 {/* Portrait Hero Slider */}
                 <View style={styles.heroContainer}>
-                    <FlatList
+                    <RNAnimated.FlatList
                         data={heroSlides}
-                        renderItem={renderHeroSlide}
+                        renderItem={({ item, index }: { item: typeof heroSlides[0], index: number }) => {
+                            const ITEM_SIZE = CARD_WIDTH + Spacing.lg;
+                            const inputRange = [
+                                (index - 1) * ITEM_SIZE,
+                                index * ITEM_SIZE,
+                                (index + 1) * ITEM_SIZE
+                            ];
+
+                            const rotate = scrollX.interpolate({
+                                inputRange,
+                                outputRange: ['2deg', '0deg', '-2deg'],
+                                extrapolate: 'clamp'
+                            });
+
+                            const scale = scrollX.interpolate({
+                                inputRange,
+                                outputRange: [0.9, 1, 0.9],
+                                extrapolate: 'clamp'
+                            });
+
+                            return (
+                                <TouchableOpacity
+                                    activeOpacity={0.9}
+                                    style={styles.heroCard}
+                                    onPress={() => {
+                                        if (index === 0) {
+                                            router.push('/gift-flow');
+                                        } else {
+                                            router.push('/(tabs)/gifts');
+                                        }
+                                    }}
+                                >
+                                    <RNAnimated.View style={{ flex: 1, transform: [{ rotate }, { scale }] }}>
+                                        <ImageBackground source={{ uri: item.image }} style={styles.heroImage} imageStyle={{ borderRadius: Radius['2xl'] }}>
+                                            <LinearGradient
+                                                colors={['transparent', 'rgba(0,0,0,0.8)']}
+                                                style={styles.heroGradient}
+                                            >
+                                                <Text style={styles.heroTitle} numberOfLines={2}>{item.title}</Text>
+                                                <View style={styles.heroLocation}>
+                                                    <Feather name="map-pin" size={12} color={Colors.white} />
+                                                    <Text style={styles.heroSubtitle}>{item.badge}</Text>
+                                                </View>
+                                            </LinearGradient>
+                                        </ImageBackground>
+                                    </RNAnimated.View>
+                                </TouchableOpacity>
+                            )
+                        }}
                         keyExtractor={(i) => i.id}
                         horizontal
                         showsHorizontalScrollIndicator={false}
                         snapToInterval={CARD_WIDTH + Spacing.lg}
                         decelerationRate="fast"
+                        scrollEventThrottle={16}
+                        onScroll={RNAnimated.event(
+                            [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+                            { useNativeDriver: true }
+                        )}
                         contentContainerStyle={{ paddingHorizontal: Spacing.xl }}
                         ItemSeparatorComponent={() => <View style={{ width: Spacing.lg }} />}
                     />
@@ -240,6 +271,35 @@ export default function HomeScreen() {
                     </ScrollView>
                 </View>
 
+                {/* Bottom CTA (Oreli Message) */}
+                {showBottomCTA && (
+                    <View style={styles.bottomCtaContainer}>
+                        <TouchableOpacity
+                            style={styles.oreliMessageContainerBottom}
+                            activeOpacity={0.8}
+                            onPress={() => router.push('/gift-flow')}
+                        >
+                            <View style={styles.oreliMessageAvatar}>
+                                <Text style={styles.oreliMessageAvatarText}>O</Text>
+                            </View>
+                            <View style={[styles.oreliMessageBubbleBottom, isTypingBottom && styles.typingBubble]}>
+                                {isTypingBottom ? (
+                                    <View style={styles.typingIndicator}>
+                                        <Text style={styles.typingDot}>•</Text>
+                                        <Text style={styles.typingDot}>•</Text>
+                                        <Text style={styles.typingDot}>•</Text>
+                                    </View>
+                                ) : (
+                                    <Text style={styles.oreliMessageText}>
+                                        <Text style={{ fontFamily: Typography.bold }}>Je peux t'aider à choisir le cadeau parfait, allons-y ! </Text>
+                                        <Feather name="arrow-right" size={14} color={Colors.gold} />
+                                    </Text>
+                                )}
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
             </ScrollView>
         </View>
     );
@@ -308,6 +368,15 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
         shadowRadius: 4,
         elevation: 1,
     },
+    oreliMessageBubbleBottom: {
+        backgroundColor: Colors.charcoal,
+        paddingHorizontal: Spacing.xl,
+        paddingVertical: Spacing.lg,
+        borderRadius: Radius['2xl'],
+        borderTopLeftRadius: Radius['2xl'], // Changed from 4 to Radius['2xl']
+        // Removed shadow properties as they are not defined or consistent with other bubble
+        flex: 1,
+    },
     oreliMessageText: {
         fontSize: Typography.sm,
         fontFamily: Typography.medium,
@@ -357,7 +426,7 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
         shadowOpacity: 0.15,
         shadowRadius: 24,
         elevation: 6,
-        overflow: 'hidden', // Forces rounded corners
+        overflow: 'visible',
     },
     heroImage: {
         flex: 1,
@@ -454,6 +523,16 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
         fontSize: Typography.xs,
         fontFamily: Typography.bold,
         color: Colors.gold,
+    },
+    bottomCtaContainer: {
+        paddingHorizontal: Spacing.xl,
+        marginTop: Spacing.xl,
+        marginBottom: Spacing.xl,
+    },
+    oreliMessageContainerBottom: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        gap: Spacing.sm,
     },
     closeOneItem: {
         alignItems: 'center',

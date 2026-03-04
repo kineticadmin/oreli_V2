@@ -8,6 +8,7 @@ import {
     TouchableOpacity,
     KeyboardAvoidingView,
     Platform,
+    LayoutAnimation,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router } from 'expo-router';
@@ -22,27 +23,85 @@ import {
     budgetOptions,
     deliveryOptions,
     surpriseOptions,
+    Product,
 } from '@/data/mockData';
 import { useGiftStore } from '@/store/giftStore';
 
-type MessageRole = 'oreli' | 'user' | 'choices' | 'products' | 'summary' | 'datePicker';
+type MessageRole = 'oreli' | 'user' | 'choices' | 'summary' | 'products' | 'datePicker';
 
-interface Choice { id: string; label: string; sublabel?: string; icon?: string }
+interface Choice {
+    id: string;
+    label: string;
+    sublabel?: string;
+    icon?: string;
+}
+
 interface ChatMessage {
     id: string;
     role: MessageRole;
     text?: string;
     choices?: Choice[];
     field?: string;
-    summaryData?: { budget: string; delivery: string; person: string };
-    layout?: 'grid' | 'horizontal';
+    layout?: 'horizontal' | 'grid';
+    summaryData?: {
+        budget: string;
+        delivery: string;
+        person?: string;
+    };
 }
+
+const PAGE_SIZE = 6;
+
+const GridProductList = ({ products, styles }: { products: Product[], styles: any }) => {
+    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+    const visibleProducts = products.slice(0, visibleCount);
+
+    const loadMore = () => {
+        if (visibleCount < products.length) {
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+            setVisibleCount(prev => prev + PAGE_SIZE);
+        }
+    };
+
+    return (
+        <View style={styles.gridContainer}>
+            {visibleProducts.map(prod => (
+                <TouchableOpacity
+                    key={prod.id}
+                    style={styles.productCardGrid}
+                    onPress={() => {
+                        useGiftStore.getState().setSelectedProduct(prod);
+                        router.push(`/product/${prod.id}`);
+                    }}
+                    activeOpacity={0.85}
+                >
+                    <View style={styles.productImageWrapGrid}>
+                        <Text style={styles.productImagePlaceholder}>📦</Text>
+                        <View style={styles.matchBadge}>
+                            <Text style={styles.matchBadgeText}>✦ {prod.matchScore}%</Text>
+                        </View>
+                    </View>
+                    <View style={styles.productInfo}>
+                        <Text style={styles.productName} numberOfLines={2}>{prod.name}</Text>
+                        <Text style={styles.productPrice}>{prod.price}€</Text>
+                    </View>
+                </TouchableOpacity>
+            ))}
+            {visibleCount < products.length && (
+                <TouchableOpacity style={styles.loadMoreBtn} onPress={loadMore}>
+                    <Text style={styles.loadMoreBtnText}>Voir plus de cadeaux</Text>
+                </TouchableOpacity>
+            )}
+        </View>
+    );
+};
 
 const personChoices: Choice[] = closeOnes.map((p) => ({
     id: p.id,
     label: p.name,
     sublabel: p.relationship,
-    icon: p.avatar,
+    icon: 'user',
 }));
 
 const occasionChoices: Choice[] = occasions.map((o) => ({
@@ -71,6 +130,7 @@ export default function GiftFlowScreen() {
     const getPersonName = (id: string) => closeOnes.find((p) => p.id === id)?.name || '';
 
     const addMessage = (msg: Omit<ChatMessage, 'id'>) => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setMessages((prev) => [...prev, { ...msg, id: `${Date.now()}-${Math.random()}` }]);
         setTimeout(() => listRef.current?.scrollToOffset({ offset: 0, animated: true }), 100);
     };
@@ -110,7 +170,13 @@ export default function GiftFlowScreen() {
             case 3:
                 simulateTyping(() => {
                     addMessage({ role: 'oreli', text: "Pour quand veux-tu offrir ce cadeau ?" });
-                    setTimeout(() => addMessage({ role: 'datePicker', field: 'deliveryDate' }), 300);
+                    const dateChoices = [
+                        { id: 'today', label: "Aujourd'hui", sublabel: 'Express', icon: 'zap' },
+                        { id: 'tomorrow', label: 'Demain', icon: 'sun' },
+                        { id: 'week', label: 'Cette semaine', icon: 'calendar' },
+                        { id: 'custom', label: 'Choisir une date', sublabel: 'Calendrier', icon: 'grid' }
+                    ];
+                    setTimeout(() => addMessage({ role: 'choices', choices: dateChoices, field: 'deliveryDate' }), 300);
                     setCurrentField('deliveryDate');
                 });
                 break;
@@ -144,19 +210,45 @@ export default function GiftFlowScreen() {
         setAnsweredIds((prev) => new Set([...prev, msgId]));
         addMessage({ role: 'user', text: choiceLabel });
 
-        const newData = { ...flowData, [field]: choiceId };
+        if (field === 'deliveryDate' && choiceId === 'custom') {
+            simulateTyping(() => {
+                addMessage({ role: 'datePicker', field: 'deliveryDate-manual' });
+            });
+            return;
+        }
+
+        let finalValue = choiceId;
+        // Compute date if a predefined option is selected, or if coming from the manual datePicker
+        if (field === 'deliveryDate' || field === 'deliveryDate-manual') {
+            if (choiceId === 'today') {
+                finalValue = new Date().toISOString();
+            } else if (choiceId === 'tomorrow') {
+                const date = new Date();
+                date.setDate(date.getDate() + 1);
+                finalValue = date.toISOString();
+            } else if (choiceId === 'week') {
+                const date = new Date();
+                date.setDate(date.getDate() + 7);
+                finalValue = date.toISOString();
+            }
+        }
+
+        const realField = field === 'deliveryDate-manual' ? 'deliveryDate' : field;
+        const newData = { ...flowData, [realField]: finalValue };
         setFlowData(newData);
 
-        if (field === 'personId') {
+        if (realField === 'personId') {
             const name = getPersonName(choiceId);
             const p = closeOnes.find((c) => c.id === choiceId);
             if (p) setSelectedPerson(p);
             const nextStep = 1;
             setStep(nextStep);
             setTimeout(() => askStep(nextStep, name), 400);
-        } else if (field === 'surpriseLevel') {
+        } else if (realField === 'surpriseLevel') {
             handleSurpriseOutcome(choiceId, newData);
         } else {
+            // For other fields, advance to the next step
+            // NOTE: deliveryDate normal and manual both land here now
             const nextStep = step + 1;
             setStep(nextStep);
             setTimeout(() => askStep(nextStep), 400);
@@ -212,6 +304,7 @@ export default function GiftFlowScreen() {
         }
         if (item.role === 'choices' && item.choices) {
             const isAnswered = answeredIds.has(item.id);
+            if (isAnswered) return null;
             return (
                 <View style={[styles.choiceRow]}>
                     {item.choices.map((choice) => (
@@ -266,7 +359,8 @@ export default function GiftFlowScreen() {
                         value={selectedDate}
                         mode="date"
                         display="inline"
-                        themeVariant={Colors.obsidian === '#FFFFFF' ? 'light' : 'dark'}
+                        themeVariant={Colors.obsidian === '#0C0A09' ? 'dark' : 'light'}
+                        accentColor={Colors.gold}
                         onChange={(event, date) => setSelectedDate(date || selectedDate)}
                     />
                     <TouchableOpacity
@@ -286,32 +380,7 @@ export default function GiftFlowScreen() {
             const ids: string[] = JSON.parse(item.text);
             const prods = products.filter((p) => ids.includes(p.id));
             if (item.layout === 'grid') {
-                return (
-                    <View style={styles.gridContainer}>
-                        {prods.map(prod => (
-                            <TouchableOpacity
-                                key={prod.id}
-                                style={styles.productCardGrid}
-                                onPress={() => {
-                                    useGiftStore.getState().setSelectedProduct(prod);
-                                    router.push(`/product/${prod.id}`);
-                                }}
-                                activeOpacity={0.85}
-                            >
-                                <View style={styles.productImageWrapGrid}>
-                                    <Text style={styles.productImagePlaceholder}>📦</Text>
-                                    <View style={styles.matchBadge}>
-                                        <Text style={styles.matchBadgeText}>✦ {prod.matchScore}%</Text>
-                                    </View>
-                                </View>
-                                <View style={styles.productInfo}>
-                                    <Text style={styles.productName} numberOfLines={2}>{prod.name}</Text>
-                                    <Text style={styles.productPrice}>{prod.price}€</Text>
-                                </View>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                );
+                return <GridProductList products={prods} styles={styles} />;
             }
 
             return (
@@ -471,7 +540,7 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
     summaryMeta: { fontSize: Typography.sm, fontFamily: Typography.regular, color: Colors.muted, textAlign: 'center', marginBottom: 16 },
     summaryBtn: { backgroundColor: Colors.gold, paddingVertical: 14, borderRadius: Radius.full, alignItems: 'center', marginTop: 12 },
     summaryBtnText: { fontSize: Typography.sm, fontFamily: Typography.semibold, color: Colors.obsidian },
-    datePickerCard: { marginLeft: 36, backgroundColor: Colors.charcoal, borderRadius: Radius.xl, borderWidth: 1, borderColor: Colors.warm, padding: 12, marginBottom: 12, overflow: 'hidden' },
+    datePickerCard: { alignSelf: 'center', backgroundColor: Colors.charcoal, borderRadius: Radius.xl, borderWidth: 1, borderColor: Colors.warm, padding: 8, marginBottom: 12, overflow: 'hidden' },
     productCard: { width: 200, backgroundColor: Colors.charcoal, borderRadius: Radius.xl, overflow: 'hidden', flexShrink: 0, borderWidth: 1, borderColor: Colors.warm },
     gridContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingLeft: 36, paddingRight: 16, paddingTop: 4, paddingBottom: 16 },
     productCardGrid: { width: '47%', backgroundColor: Colors.charcoal, borderRadius: Radius.xl, overflow: 'hidden', borderWidth: 1, borderColor: Colors.warm },
@@ -489,4 +558,6 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
     input: { flex: 1, backgroundColor: Colors.charcoal, borderRadius: Radius.full, paddingHorizontal: 16, paddingVertical: 12, fontSize: Typography.sm, fontFamily: Typography.regular, color: Colors.cream, borderWidth: 1, borderColor: Colors.warm },
     sendBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.gold, alignItems: 'center', justifyContent: 'center' },
     sendBtnText: { fontSize: 18, color: Colors.obsidian, fontFamily: Typography.bold },
+    loadMoreBtn: { width: '100%', paddingVertical: 14, alignItems: 'center', backgroundColor: Colors.charcoal, borderRadius: Radius.xl, borderWidth: 1, borderColor: Colors.warm, marginTop: 8 },
+    loadMoreBtnText: { color: Colors.gold, fontFamily: Typography.semibold, fontSize: Typography.sm },
 });
