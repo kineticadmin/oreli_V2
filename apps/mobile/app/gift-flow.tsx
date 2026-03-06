@@ -19,13 +19,13 @@ import { Typography, Spacing, Radius, Shadow } from '@/constants/Typography';
 import {
     closeOnes,
     occasions,
-    products,
     budgetOptions,
     deliveryOptions,
     surpriseOptions,
 } from '@/data/mockData';
-import type { Product } from '@/data/mockData';
 import { useGiftStore } from '@/store/giftStore';
+import { useRecommendation, type RecommendedProduct } from '@/hooks/useRecommendation';
+import { formatPrice } from '@/hooks/useCatalog';
 
 type MessageRole = 'oreli' | 'user' | 'choices' | 'summary' | 'products' | 'datePicker';
 
@@ -48,14 +48,13 @@ interface ChatMessage {
         delivery: string;
         person?: string;
     };
+    recommendedProducts?: RecommendedProduct[];
 }
 
 const PAGE_SIZE = 6;
 
-const GridProductList = ({ products, styles }: { products: Product[], styles: any }) => {
+const GridProductList = ({ products, styles }: { products: RecommendedProduct[], styles: any }) => {
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-
-    const visibleProducts = products.slice(0, visibleCount);
 
     const loadMore = () => {
         if (visibleCount < products.length) {
@@ -66,25 +65,25 @@ const GridProductList = ({ products, styles }: { products: Product[], styles: an
 
     return (
         <View style={styles.gridContainer}>
-            {visibleProducts.map(prod => (
+            {products.slice(0, visibleCount).map(prod => (
                 <TouchableOpacity
                     key={prod.id}
                     style={styles.productCardGrid}
                     onPress={() => {
                         useGiftStore.getState().updateGiftFlow({ selectedProductId: prod.id });
-                        router.push(`/product/${prod.id}`);
+                        router.push(`/product/${prod.id}` as never);
                     }}
                     activeOpacity={0.85}
                 >
                     <View style={styles.productImageWrapGrid}>
                         <Text style={styles.productImagePlaceholder}>📦</Text>
                         <View style={styles.matchBadge}>
-                            <Text style={styles.matchBadgeText}>✦ {prod.matchScore}%</Text>
+                            <Text style={styles.matchBadgeText}>✦ {Math.round(prod.score * 100)}%</Text>
                         </View>
                     </View>
                     <View style={styles.productInfo}>
-                        <Text style={styles.productName} numberOfLines={2}>{prod.name}</Text>
-                        <Text style={styles.productPrice}>{prod.price}€</Text>
+                        <Text style={styles.productName} numberOfLines={2}>{prod.title}</Text>
+                        <Text style={styles.productPrice}>{formatPrice(prod.priceAmount, prod.currency)}</Text>
                     </View>
                 </TouchableOpacity>
             ))}
@@ -115,6 +114,7 @@ export default function GiftFlowScreen() {
     const styles = createStyles(Colors);
     const insets = useSafeAreaInsets();
     const { selectedPerson, setSelectedPerson, updateGiftFlow } = useGiftStore();
+    const recommend = useRecommendation();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isTyping, setIsTyping] = useState(false);
     const [inputValue, setInputValue] = useState('');
@@ -260,28 +260,62 @@ export default function GiftFlowScreen() {
         }
     };
 
+    const buildGiftIntent = (level: string, data: Record<string, string>) => {
+        const budgetEur = parseInt(data.budget || '80');
+        const budgetMaxCents = budgetEur === 100 ? 15_000 : budgetEur * 100;
+        const deliveryMs = data.deliveryDate ? new Date(data.deliveryDate).getTime() - Date.now() : Infinity;
+        const isLastMinute = deliveryMs < 36 * 60 * 60 * 1_000; // moins de 36h
+
+        return {
+            budgetMin: 0,
+            budgetMax: budgetMaxCents,
+            occasionType: data.occasion || undefined,
+            isSurpriseMode: level === 'total',
+            isLastMinute,
+            limit: level === 'guided' ? 3 : level === 'total' ? 1 : 8,
+        };
+    };
+
     const handleSurpriseOutcome = (level: string, data: Record<string, string>) => {
         const personName = getPersonName(data.personId);
-        const maxBudget = parseInt(data.budget || '80') + 20;
-        const filtered = products.filter((p) => p.price <= maxBudget);
 
         if (level === 'total') {
             simulateTyping(() => {
                 addMessage({ role: 'oreli', text: `Je m'occupe de tout pour ${personName} ! Une magnifique surprise sera livrée.` });
+                const formattedDate = new Date(data.deliveryDate).toLocaleDateString('fr-FR');
                 setTimeout(() => {
-                    const formattedDate = new Date(data.deliveryDate).toLocaleDateString('fr-FR');
                     addMessage({ role: 'summary', summaryData: { budget: `~${data.budget}€`, delivery: formattedDate, person: personName }, field: 'confirm_total' });
                 }, 400);
             }, 1200);
-        } else {
-            simulateTyping(() => {
-                const txt = level === 'guided' ? 'Voici mes 3 meilleures recommandations :' : `Voici une sélection pour ${personName} :`;
-                addMessage({ role: 'oreli', text: txt });
-                const productList = level === 'guided' ? filtered.slice(0, 3) : filtered;
-                // Store products in message for rendering
-                setTimeout(() => addMessage({ role: 'products' as MessageRole, text: JSON.stringify(productList.map(p => p.id)), layout: level === 'guided' ? 'horizontal' : 'grid' }), 400);
-            }, 1500);
+            return;
         }
+
+        const introText = level === 'guided'
+            ? 'Voici mes 3 meilleures recommandations :'
+            : `Voici une sélection pour ${personName} :`;
+
+        simulateTyping(() => {
+            addMessage({ role: 'oreli', text: introText });
+        }, 1000);
+
+        recommend.mutate(buildGiftIntent(level, data), {
+            onSuccess: (result) => {
+                if (result.products.length === 0) {
+                    addMessage({ role: 'oreli', text: 'Je n\'ai pas trouvé de cadeaux correspondants pour l\'instant. Essaie d\'ajuster ton budget !' });
+                    return;
+                }
+                setTimeout(() => {
+                    addMessage({
+                        role: 'products',
+                        recommendedProducts: result.products,
+                        layout: level === 'guided' ? 'horizontal' : 'grid',
+                    });
+                }, 600);
+            },
+            onError: () => {
+                addMessage({ role: 'oreli', text: 'Désolé, je n\'arrive pas à charger les suggestions. Réessaie dans un instant.' });
+            },
+        });
     };
 
     const totalSteps = selectedPerson ? 4 : 5;
@@ -381,9 +415,8 @@ export default function GiftFlowScreen() {
                 </View>
             );
         }
-        if (item.role === 'products' && item.text) {
-            const ids: string[] = JSON.parse(item.text);
-            const prods = products.filter((p) => ids.includes(p.id));
+        if (item.role === 'products' && item.recommendedProducts) {
+            const prods = item.recommendedProducts;
             if (item.layout === 'grid') {
                 return <GridProductList products={prods} styles={styles} />;
             }
@@ -400,20 +433,20 @@ export default function GiftFlowScreen() {
                             style={styles.productCard}
                             onPress={() => {
                                 useGiftStore.getState().updateGiftFlow({ selectedProductId: prod.id });
-                                router.push(`/product/${prod.id}`);
+                                router.push(`/product/${prod.id}` as never);
                             }}
                             activeOpacity={0.85}
                         >
                             <View style={styles.productImageWrap}>
                                 <Text style={styles.productImagePlaceholder}>📦</Text>
                                 <View style={styles.matchBadge}>
-                                    <Text style={styles.matchBadgeText}>✦ {prod.matchScore}%</Text>
+                                    <Text style={styles.matchBadgeText}>✦ {Math.round(prod.score * 100)}%</Text>
                                 </View>
                             </View>
                             <View style={styles.productInfo}>
-                                <Text style={styles.productName} numberOfLines={2}>{prod.name}</Text>
-                                <Text style={styles.productJustification} numberOfLines={2}>{prod.aiJustification}</Text>
-                                <Text style={styles.productPrice}>{prod.price}€</Text>
+                                <Text style={styles.productName} numberOfLines={2}>{prod.title}</Text>
+                                <Text style={styles.productJustification} numberOfLines={2}>{prod.seller.displayName}</Text>
+                                <Text style={styles.productPrice}>{formatPrice(prod.priceAmount, prod.currency)}</Text>
                             </View>
                         </TouchableOpacity>
                     )}
@@ -455,7 +488,7 @@ export default function GiftFlowScreen() {
                 keyExtractor={(m) => m.id}
                 contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12 }}
                 ListHeaderComponent={
-                    isTyping ? (
+                    (isTyping || recommend.isPending) ? (
                         <View style={styles.msgOreli}>
                             <View style={styles.msgAvatar}><Text style={styles.msgAvatarText}>✦</Text></View>
                             <View style={styles.typingBubble}>
