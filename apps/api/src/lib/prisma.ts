@@ -1,4 +1,6 @@
-import { PrismaClient } from '@oreli/prisma';
+import { PrismaClient, Prisma } from '@oreli/prisma';
+
+export type { Prisma };
 
 // Singleton Prisma — évite les connexions multiples en développement
 // (le hot reload de tsx recréerait le client à chaque changement de fichier)
