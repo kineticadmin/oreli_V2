@@ -10,6 +10,7 @@ import {
   updateSellerProduct,
   archiveSellerProduct,
 } from '../services/seller/seller.service.js';
+import { enqueueProductEmbeddingJob } from '../jobs/product-embedding.job.js';
 
 export const sellerRouter = new Hono();
 
@@ -104,6 +105,8 @@ sellerRouter.post(
     const { sellerId } = context.req.param();
     const input = context.req.valid('json');
     const product = await createSellerProduct(sellerId, input);
+    // Enfile l'embedding de façon asynchrone — ne bloque pas la réponse
+    await enqueueProductEmbeddingJob(product.id, product.title, product.description);
     return context.json(product, 201);
   },
 );
@@ -121,6 +124,11 @@ sellerRouter.patch(
     const { sellerId, productId } = context.req.param();
     const input = context.req.valid('json');
     const product = await updateSellerProduct(sellerId, productId, input);
+    // Re-génère l'embedding seulement si le contenu textuel a changé
+    const textContentChanged = input.title !== undefined || input.description !== undefined;
+    if (textContentChanged) {
+      await enqueueProductEmbeddingJob(product.id, product.title, product.description);
+    }
     return context.json(product, 200);
   },
 );
