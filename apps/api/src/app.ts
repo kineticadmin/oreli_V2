@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 import { requestLogger } from './middleware/logger.js';
 import { handleError } from './middleware/error-handler.js';
 import { healthRouter } from './routes/health.router.js';
+import { authRouter } from './routes/auth.router.js';
 
 const ALLOWED_ORIGINS = (process.env['ALLOWED_ORIGINS'] ?? '')
   .split(',')
@@ -27,9 +28,9 @@ export function buildApp(): Hono {
   // ─── Routes ───────────────────────────────────────────────────────────
 
   app.route('/health', healthRouter);
+  app.route('/auth', authRouter);
 
   // Les routers suivants sont ajoutés au fil des phases :
-  // app.route('/auth', authRouter);
   // app.route('/catalog', catalogRouter);
   // app.route('/gift', giftRouter);
   // app.route('/orders', ordersRouter);

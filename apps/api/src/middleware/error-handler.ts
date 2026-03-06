@@ -19,7 +19,6 @@ export function handleError(error: Error, context: Context): Response {
     return context.json(errorResponse, 422);
   }
 
-  // Erreurs métier connues (à étendre avec des classes d'erreur dédiées)
   if (error.name === 'NotFoundError') {
     return context.json({ code: 'NOT_FOUND', message: error.message }, 404);
   }
@@ -30,6 +29,14 @@ export function handleError(error: Error, context: Context): Response {
 
   if (error.name === 'UnauthorizedError') {
     return context.json({ code: 'UNAUTHORIZED', message: error.message }, 401);
+  }
+
+  if (error.name === 'ConflictError') {
+    return context.json({ code: 'CONFLICT', message: error.message }, 409);
+  }
+
+  if (error.name === 'ValidationError') {
+    return context.json({ code: 'VALIDATION_ERROR', message: error.message }, 422);
   }
 
   // Erreur inattendue → log complet côté serveur, message générique côté client
