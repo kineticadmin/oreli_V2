@@ -11,6 +11,12 @@ import {
   archiveSellerProduct,
 } from '../services/seller/seller.service.js';
 import { enqueueProductEmbeddingJob } from '../jobs/product-embedding.job.js';
+import {
+  listSellerOrders,
+  acceptSellerOrder,
+  rejectSellerOrder,
+  shipSellerOrder,
+} from '../services/orders/orders.service.js';
 
 export const sellerRouter = new Hono();
 
@@ -145,5 +151,87 @@ sellerRouter.delete(
     const { sellerId, productId } = context.req.param();
     await archiveSellerProduct(sellerId, productId);
     return context.body(null, 204);
+  },
+);
+
+// ─── Routes commandes vendeur ──────────────────────────────────────────────
+
+const sellerOrdersQuerySchema = z.object({
+  status: z.enum([
+    'paid', 'accepted', 'in_preparation', 'shipped', 'delivered', 'cancelled',
+  ]).optional(),
+});
+
+const rejectOrderSchema = z.object({
+  reason: z.string().min(1).max(500),
+});
+
+const shipOrderSchema = z.object({
+  trackingCode: z.string().min(1).max(200),
+});
+
+/**
+ * GET /sellers/:sellerId/orders
+ * Liste des commandes de la boutique (seulement les produits de ce vendeur).
+ */
+sellerRouter.get(
+  '/:sellerId/orders',
+  requireAuth,
+  requireSellerOwnership,
+  zValidator('query', sellerOrdersQuerySchema),
+  async (context) => {
+    const { sellerId } = context.req.param();
+    const { status } = context.req.valid('query');
+    const orders = await listSellerOrders(sellerId, status);
+    return context.json(orders, 200);
+  },
+);
+
+/**
+ * PATCH /sellers/:sellerId/orders/:orderId/accept
+ * Accepte une commande payée — déclenche la préparation.
+ */
+sellerRouter.patch(
+  '/:sellerId/orders/:orderId/accept',
+  requireAuth,
+  requireSellerOwnership,
+  async (context) => {
+    const { sellerId, orderId } = context.req.param();
+    await acceptSellerOrder(sellerId, orderId);
+    return context.json({ success: true }, 200);
+  },
+);
+
+/**
+ * PATCH /sellers/:sellerId/orders/:orderId/reject
+ * Rejette une commande payée — libère le stock et annule la commande.
+ */
+sellerRouter.patch(
+  '/:sellerId/orders/:orderId/reject',
+  requireAuth,
+  requireSellerOwnership,
+  zValidator('json', rejectOrderSchema),
+  async (context) => {
+    const { sellerId, orderId } = context.req.param();
+    const { reason } = context.req.valid('json');
+    await rejectSellerOrder(sellerId, orderId, reason);
+    return context.json({ success: true }, 200);
+  },
+);
+
+/**
+ * PATCH /sellers/:sellerId/orders/:orderId/ship
+ * Marque la commande comme expédiée avec le numéro de suivi.
+ */
+sellerRouter.patch(
+  '/:sellerId/orders/:orderId/ship',
+  requireAuth,
+  requireSellerOwnership,
+  zValidator('json', shipOrderSchema),
+  async (context) => {
+    const { sellerId, orderId } = context.req.param();
+    const { trackingCode } = context.req.valid('json');
+    await shipSellerOrder(sellerId, orderId, trackingCode);
+    return context.json({ success: true }, 200);
   },
 );
