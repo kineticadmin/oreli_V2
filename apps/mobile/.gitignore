@@ -28,17 +28,3 @@ android/
 
 # Expo config
 expo-env.d.ts
-# Prisma client généré (regénéré via `pnpm prisma generate`)
-packages/prisma/generated/
-
-# Turbo cache
-.turbo/
-
-# Tests coverage
-coverage/
-
-# Build API
-apps/api/dist/
-
-# pnpm
-pnpm-debug.log
