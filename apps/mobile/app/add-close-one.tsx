@@ -6,12 +6,14 @@ import {
     ScrollView,
     TouchableOpacity,
     TextInput,
+    ActivityIndicator,
     Alert,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius } from '@/constants/Typography';
+import { useCreateRelationship } from '@/hooks/useRelationships';
 import { t } from '@/constants/i18n';
 
 const RELATIONSHIPS = ['Maman', 'Papa', 'Partenaire', 'Meilleure amie', 'Meilleur ami', 'Frère', 'Sœur', 'Collègue', 'Ami(e)'];
@@ -27,6 +29,7 @@ export default function AddCloseOneScreen() {
     const [birthdayError, setBirthdayError] = useState('');
     const [selectedTastes, setSelectedTastes] = useState<string[]>([]);
 
+    const createRelationship = useCreateRelationship();
     const canSave = name.trim().length > 0 && relationship.length > 0;
 
     const validateBirthday = (value: string) => {
@@ -45,10 +48,23 @@ export default function AddCloseOneScreen() {
         );
     };
 
+    const parseBirthdayToIso = (ddMmYyyy: string): string | undefined => {
+        const [day, month, year] = ddMmYyyy.split('/');
+        if (!day || !month || !year) return undefined;
+        return `${year}-${month}-${day}`;
+    };
+
     const handleSave = () => {
-        Alert.alert('Proche ajouté', `${name} a été ajouté à tes proches !`, [
-            { text: 'OK', onPress: () => router.back() }
-        ]);
+        const birthdate = birthday.trim() ? parseBirthdayToIso(birthday.trim()) : undefined;
+        const preferences = selectedTastes.length > 0 ? { interests: selectedTastes } : undefined;
+
+        createRelationship.mutate(
+            { displayName: name.trim(), relationshipType: relationship, birthdate, preferences },
+            {
+                onSuccess: () => router.back(),
+                onError: () => Alert.alert('Erreur', 'Impossible d\'ajouter ce proche. Réessaie.'),
+            }
+        );
     };
 
     return (
@@ -131,14 +147,18 @@ export default function AddCloseOneScreen() {
             {/* Save CTA */}
             <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
                 <TouchableOpacity
-                    style={[styles.saveBtn, !canSave && styles.saveBtnDisabled]}
+                    style={[styles.saveBtn, (!canSave || createRelationship.isPending) && styles.saveBtnDisabled]}
                     onPress={handleSave}
-                    disabled={!canSave}
+                    disabled={!canSave || createRelationship.isPending}
                     activeOpacity={0.85}
                 >
-                    <Text style={[styles.saveBtnText, !canSave && styles.saveBtnTextDisabled]}>
-                        {t('common.save')} {name || ''}
-                    </Text>
+                    {createRelationship.isPending ? (
+                        <ActivityIndicator color={Colors.obsidian} />
+                    ) : (
+                        <Text style={[styles.saveBtnText, !canSave && styles.saveBtnTextDisabled]}>
+                            {t('common.save')} {name || ''}
+                        </Text>
+                    )}
                 </TouchableOpacity>
             </View>
         </View>

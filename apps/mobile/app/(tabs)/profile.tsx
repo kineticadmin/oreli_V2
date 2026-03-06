@@ -11,14 +11,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius, Shadow } from '@/constants/Typography';
 import { useGiftStore } from '@/store/giftStore';
+import { useLogout } from '@/hooks/useAuth';
 
 export default function ProfileScreen() {
     const Colors = useThemeColors();
     const styles = createStyles(Colors);
     const insets = useSafeAreaInsets();
     const { userName, userAddress, theme, setTheme } = useGiftStore();
+    const logoutMutation = useLogout();
 
-    const initial = userName.charAt(0).toUpperCase();
+    const displayName = userName || 'Profil';
+    const initial = displayName.charAt(0).toUpperCase();
 
     const toggleTheme = () => {
         setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -37,7 +40,7 @@ export default function ProfileScreen() {
                     <View style={styles.avatar}>
                         <Text style={styles.avatarText}>{initial}</Text>
                     </View>
-                    <Text style={styles.userName}>{userName}</Text>
+                    <Text style={styles.userName}>{displayName}</Text>
                 </View>
 
                 {/* Address */}
@@ -110,6 +113,18 @@ export default function ProfileScreen() {
                         </View>
                     </View>
                 </View>
+
+                {/* Logout */}
+                <View style={styles.section}>
+                    <TouchableOpacity
+                        style={styles.logoutBtn}
+                        onPress={() => logoutMutation.mutate()}
+                        disabled={logoutMutation.isPending}
+                        activeOpacity={0.8}
+                    >
+                        <Text style={styles.logoutBtnText}>Se déconnecter</Text>
+                    </TouchableOpacity>
+                </View>
             </ScrollView>
         </View>
     );
@@ -139,6 +154,9 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
     },
     avatarText: { fontSize: Typography['2xl'], fontFamily: Typography.bold, color: Colors.obsidian },
     userName: { fontSize: Typography.xl, fontFamily: Typography.bold, color: Colors.cream, letterSpacing: -0.5 },
+    userEmail: { fontSize: Typography.xs, fontFamily: Typography.regular, color: Colors.muted },
+    logoutBtn: { backgroundColor: Colors.charcoal, borderRadius: Radius.xl, borderWidth: 1, borderColor: Colors.warm, paddingVertical: 16, alignItems: 'center' },
+    logoutBtnText: { fontSize: Typography.sm, fontFamily: Typography.semibold, color: Colors.error },
     section: { paddingHorizontal: Spacing.xl, marginBottom: Spacing['2xl'] },
     sectionTitle: { fontSize: Typography.xs, fontFamily: Typography.semibold, color: Colors.muted, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: Spacing.sm },
     card: {

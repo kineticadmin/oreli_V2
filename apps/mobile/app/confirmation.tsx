@@ -6,15 +6,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius } from '@/constants/Typography';
 import { useGiftStore } from '@/store/giftStore';
+import { useProductDetail, formatPrice } from '@/hooks/useCatalog';
+
+const PREMIUM_WRAP_PRICE_CENTS = 500;
 
 export default function ConfirmationScreen() {
   const Colors = useThemeColors();
   const styles = createStyles(Colors);
     const insets = useSafeAreaInsets();
-    const { selectedProduct, selectedPerson, giftFlow, resetGiftFlow } = useGiftStore();
-    const product = selectedProduct;
+    const { selectedPerson, giftFlow, resetGiftFlow } = useGiftStore();
+    const { data: product } = useProductDetail(giftFlow.selectedProductId ?? '');
     const person = selectedPerson;
-    const total = (product?.price ?? 0) + (giftFlow.premiumWrap ? 5 : 0);
+    const totalPriceCents = (product?.priceAmount ?? 0) + (giftFlow.premiumWrap ? PREMIUM_WRAP_PRICE_CENTS : 0);
 
     const deliveryText = (() => {
         if (giftFlow.deliveryDate) {
@@ -62,12 +65,12 @@ export default function ConfirmationScreen() {
                     <View style={styles.orderCard}>
                         <View style={styles.orderRow}>
                             <Text style={styles.orderLabel}>Produit</Text>
-                            <Text style={styles.orderValue} numberOfLines={1}>{product.name}</Text>
+                            <Text style={styles.orderValue} numberOfLines={1}>{product.title}</Text>
                         </View>
                         <View style={styles.divider} />
                         <View style={styles.orderRow}>
                             <Text style={styles.orderLabel}>Total payé</Text>
-                            <Text style={styles.orderValueBold}>{total}€</Text>
+                            <Text style={styles.orderValueBold}>{formatPrice(totalPriceCents, product.currency)}</Text>
                         </View>
                         <View style={styles.divider} />
                         <View style={styles.orderRow}>

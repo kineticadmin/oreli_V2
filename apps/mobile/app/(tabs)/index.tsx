@@ -20,8 +20,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius } from '@/constants/Typography';
-import { closeOnes, products, heroSlides } from '@/data/mockData';
+import { heroSlides } from '@/data/mockData';
 import { useGiftStore } from '@/store/giftStore';
+import { useCuratedProducts, formatPrice } from '@/hooks/useCatalog';
+import { useRelationships } from '@/hooks/useRelationships';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_W * 0.72;
@@ -39,15 +41,34 @@ export default function HomeScreen() {
     const userName = useGiftStore((s) => s.userName);
     const initial = userName.charAt(0).toUpperCase();
 
+    const { data: curatedProducts } = useCuratedProducts();
+    const { data: relationships } = useRelationships();
+    const closeOnes = (relationships ?? []).map((rel) => {
+        const nearestEvent = rel.upcomingEvents[0];
+        return {
+            id: rel.id,
+            name: rel.displayName,
+            relationship: rel.relationshipType,
+            avatar: rel.displayName.charAt(0).toUpperCase(),
+            avatarUrl: null as string | null,
+            daysUntilEvent: nearestEvent?.daysUntil,
+            eventType: nearestEvent?.eventType ?? null,
+            eventDate: nearestEvent?.eventDate ?? null,
+            // Required by setSelectedPerson (giftStore)
+            apiId: rel.id,
+            preferences: rel.preferences,
+        };
+    });
+
     // Typing effect state for bottom CTA
     const [showBottomCTA, setShowBottomCTA] = useState(false);
     const [isTypingBottom, setIsTypingBottom] = useState(true);
 
     const scrollX = React.useRef(new RNAnimated.Value(0)).current;
 
-    // Find closest event
-    const nextEvent = [...closeOnes]
-        .filter((p) => p.eventDate && p.daysUntilEvent !== undefined)
+    // Prochain événement parmi les proches
+    const nextEvent = closeOnes
+        .filter((p) => p.daysUntilEvent !== undefined)
         .sort((a, b) => (a.daysUntilEvent ?? 999) - (b.daysUntilEvent ?? 999))[0];
 
 
@@ -270,6 +291,49 @@ export default function HomeScreen() {
                         ))}
                     </ScrollView>
                 </View>
+
+                {/* Sélection du moment */}
+                {curatedProducts && curatedProducts.length > 0 && (
+                    <View style={[styles.section, { marginTop: Spacing.xl }]}>
+                        <View style={styles.sectionHeaderRow}>
+                            <Text style={styles.sectionTitle}>Sélection du moment</Text>
+                            <TouchableOpacity onPress={() => router.push('/(tabs)/gifts')}>
+                                <Text style={styles.seeAll}>Voir tout »</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: Spacing.xl, gap: Spacing.md }}>
+                            {curatedProducts.map((product) => (
+                                <TouchableOpacity
+                                    key={product.id}
+                                    style={styles.productCard}
+                                    activeOpacity={0.85}
+                                    onPress={() => router.push(`/product/${product.id}` as never)}
+                                >
+                                    <View style={styles.productImageContainer}>
+                                        {product.coverImageUrl ? (
+                                            <Image source={{ uri: product.coverImageUrl }} style={styles.productImage} />
+                                        ) : (
+                                            <View style={[styles.productImage, styles.productImageFallback]}>
+                                                <Feather name="gift" size={28} color={Colors.muted} />
+                                            </View>
+                                        )}
+                                        {product.isLastMinuteOk && (
+                                            <View style={styles.lastMinuteBadge}>
+                                                <Text style={styles.lastMinuteBadgeText}>⚡ Rapide</Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                    <View style={styles.productInfo}>
+                                        <Text style={styles.productTitle} numberOfLines={2}>{product.title}</Text>
+                                        <Text style={styles.productSeller} numberOfLines={1}>{product.seller.displayName}</Text>
+                                        <Text style={styles.productPrice}>{formatPrice(product.priceAmount, product.currency)}</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </View>
+                )}
 
                 {/* Bottom CTA (Oreli Message) */}
                 {showBottomCTA && (
@@ -570,5 +634,60 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
         fontSize: Typography.xs,
         fontFamily: Typography.semibold,
         color: Colors.muted,
+    },
+    productCard: {
+        width: 160,
+        backgroundColor: Colors.charcoal,
+        borderRadius: Radius.xl,
+        borderWidth: 1,
+        borderColor: Colors.warm,
+        overflow: 'hidden',
+    },
+    productImageContainer: {
+        position: 'relative',
+    },
+    productImage: {
+        width: 160,
+        height: 140,
+    },
+    productImageFallback: {
+        backgroundColor: Colors.stone,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    lastMinuteBadge: {
+        position: 'absolute',
+        top: 8,
+        left: 8,
+        backgroundColor: Colors.obsidian + 'cc',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: Radius.full,
+    },
+    lastMinuteBadgeText: {
+        fontSize: 10,
+        fontFamily: Typography.semibold,
+        color: Colors.gold,
+    },
+    productInfo: {
+        padding: Spacing.md,
+        gap: 3,
+    },
+    productTitle: {
+        fontSize: Typography.sm,
+        fontFamily: Typography.semibold,
+        color: Colors.cream,
+        lineHeight: Typography.sm * 1.3,
+    },
+    productSeller: {
+        fontSize: Typography.xs,
+        fontFamily: Typography.regular,
+        color: Colors.muted,
+    },
+    productPrice: {
+        fontSize: Typography.sm,
+        fontFamily: Typography.bold,
+        color: Colors.gold,
+        marginTop: 2,
     },
 });

@@ -6,15 +6,17 @@ import {
     ScrollView,
     TouchableOpacity,
     ImageBackground,
+    Image,
+    ActivityIndicator,
     Dimensions,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Feather } from '@expo/vector-icons';
 import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius, Shadow } from '@/constants/Typography';
-import { products } from '@/data/mockData';
-import { useGiftStore } from '@/store/giftStore';
+import { useCuratedProducts, useProductsList, formatPrice } from '@/hooks/useCatalog';
 
 const { width: W } = Dimensions.get('window');
 const CARD_W = (W - Spacing.xl * 2 - Spacing.md) / 2;
@@ -23,85 +25,93 @@ export default function GiftsScreen() {
     const Colors = useThemeColors();
     const styles = createStyles(Colors);
     const insets = useSafeAreaInsets();
-    const setSelectedProduct = useGiftStore((s) => s.setSelectedProduct);
 
-    const topPicks = [...products].sort((a, b) => b.matchScore - a.matchScore).slice(0, 3);
+    const { data: curatedProducts, isLoading: isLoadingCurated } = useCuratedProducts();
+    const { data: productsPages, isLoading: isLoadingProducts } = useProductsList({ limit: 20 });
+
+    const allProducts = productsPages?.pages.flatMap((page) => page.items) ?? [];
 
     return (
         <View style={[styles.container, { paddingTop: insets.top }]}>
             {/* Header */}
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Mes cadeaux</Text>
+                <Text style={styles.headerTitle}>Découvrir</Text>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
-                {/* Top picks */}
+                {/* Coups de cœur */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>✦  Coups de cœur</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                        {topPicks.map((product) => (
-                            <TouchableOpacity
-                                key={product.id}
-                                style={styles.featuredCard}
-                                activeOpacity={0.85}
-                                onPress={() => {
-                                    setSelectedProduct(product);
-                                    router.push(`/product/${product.id}`);
-                                }}
-                            >
-                                <ImageBackground
-                                    source={{ uri: product.images[0] }}
-                                    style={styles.featuredImage}
-                                    imageStyle={{ borderRadius: Radius.xl }}
+                    {isLoadingCurated ? (
+                        <ActivityIndicator color={Colors.gold} style={{ marginTop: 20 }} />
+                    ) : (
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                            {(curatedProducts ?? []).map((product) => (
+                                <TouchableOpacity
+                                    key={product.id}
+                                    style={styles.featuredCard}
+                                    activeOpacity={0.85}
+                                    onPress={() => router.push(`/product/${product.id}` as never)}
                                 >
-                                    <LinearGradient
-                                        colors={['transparent', 'rgba(0,0,0,0.80)']}
-                                        style={styles.featuredGradient}
+                                    <ImageBackground
+                                        source={product.coverImageUrl ? { uri: product.coverImageUrl } : undefined}
+                                        style={styles.featuredImage}
+                                        imageStyle={{ borderRadius: Radius.xl }}
                                     >
-                                        <View style={styles.matchBadge}>
-                                            <Text style={styles.matchBadgeText}>✦ {product.matchScore}%</Text>
-                                        </View>
-                                        <Text style={styles.featuredName} numberOfLines={2}>{product.name}</Text>
-                                        <Text style={styles.featuredPrice}>{product.price}€</Text>
-                                    </LinearGradient>
-                                </ImageBackground>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
+                                        <LinearGradient
+                                            colors={['transparent', 'rgba(0,0,0,0.80)']}
+                                            style={styles.featuredGradient}
+                                        >
+                                            {product.isLastMinuteOk && (
+                                                <View style={styles.matchBadge}>
+                                                    <Text style={styles.matchBadgeText}>⚡ Rapide</Text>
+                                                </View>
+                                            )}
+                                            <Text style={styles.featuredName} numberOfLines={2}>{product.title}</Text>
+                                            <Text style={styles.featuredPrice}>{formatPrice(product.priceAmount, product.currency)}</Text>
+                                        </LinearGradient>
+                                    </ImageBackground>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    )}
                 </View>
 
-                {/* All products grid */}
+                {/* Toute la sélection */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Toute la sélection</Text>
-                    <View style={styles.grid}>
-                        {products.map((product) => (
-                            <TouchableOpacity
-                                key={product.id}
-                                style={styles.gridCard}
-                                activeOpacity={0.85}
-                                onPress={() => {
-                                    setSelectedProduct(product);
-                                    router.push(`/product/${product.id}`);
-                                }}
-                            >
-                                <View style={styles.gridImageWrap}>
-                                    <Text style={styles.gridImagePlaceholder}>📦</Text>
-                                    {product.deliveryExpress && (
-                                        <View style={styles.expressBadge}>
-                                            <Text style={styles.expressBadgeText}>⚡</Text>
-                                        </View>
-                                    )}
-                                </View>
-                                <View style={styles.gridInfo}>
-                                    <Text style={styles.gridName} numberOfLines={2}>{product.name}</Text>
-                                    <View style={styles.gridMeta}>
-                                        <Text style={styles.gridPrice}>{product.price}€</Text>
-                                        <Text style={styles.gridRating}>★ {product.rating}</Text>
+                    {isLoadingProducts ? (
+                        <ActivityIndicator color={Colors.gold} style={{ marginTop: 20 }} />
+                    ) : (
+                        <View style={styles.grid}>
+                            {allProducts.map((product) => (
+                                <TouchableOpacity
+                                    key={product.id}
+                                    style={styles.gridCard}
+                                    activeOpacity={0.85}
+                                    onPress={() => router.push(`/product/${product.id}` as never)}
+                                >
+                                    <View style={styles.gridImageWrap}>
+                                        {product.coverImageUrl ? (
+                                            <Image source={{ uri: product.coverImageUrl }} style={styles.gridImage} />
+                                        ) : (
+                                            <Feather name="gift" size={32} color={Colors.muted} />
+                                        )}
+                                        {product.isLastMinuteOk && (
+                                            <View style={styles.expressBadge}>
+                                                <Text style={styles.expressBadgeText}>⚡</Text>
+                                            </View>
+                                        )}
                                     </View>
-                                </View>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
+                                    <View style={styles.gridInfo}>
+                                        <Text style={styles.gridName} numberOfLines={2}>{product.title}</Text>
+                                        <Text style={styles.gridSeller} numberOfLines={1}>{product.seller.displayName}</Text>
+                                        <Text style={styles.gridPrice}>{formatPrice(product.priceAmount, product.currency)}</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    )}
                 </View>
             </ScrollView>
         </View>
@@ -157,7 +167,10 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
         justifyContent: 'center',
         position: 'relative',
     },
-    gridImagePlaceholder: { fontSize: 36 },
+    gridImage: {
+        width: '100%',
+        height: 130,
+    },
     expressBadge: {
         position: 'absolute',
         top: 8,
@@ -172,9 +185,8 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
         justifyContent: 'center',
     },
     expressBadgeText: { fontSize: 12 },
-    gridInfo: { padding: 10 },
-    gridName: { fontSize: Typography.xs, fontFamily: Typography.semibold, color: Colors.cream, lineHeight: 16, marginBottom: 6 },
-    gridMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    gridPrice: { fontSize: Typography.sm, fontFamily: Typography.bold, color: Colors.cream },
-    gridRating: { fontSize: 10, fontFamily: Typography.regular, color: Colors.gold },
+    gridInfo: { padding: 10, gap: 3 },
+    gridName: { fontSize: Typography.xs, fontFamily: Typography.semibold, color: Colors.cream, lineHeight: 16 },
+    gridSeller: { fontSize: 10, fontFamily: Typography.regular, color: Colors.muted },
+    gridPrice: { fontSize: Typography.sm, fontFamily: Typography.bold, color: Colors.gold, marginTop: 2 },
 });

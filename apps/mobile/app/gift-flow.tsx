@@ -23,8 +23,8 @@ import {
     budgetOptions,
     deliveryOptions,
     surpriseOptions,
-    Product,
 } from '@/data/mockData';
+import type { Product } from '@/data/mockData';
 import { useGiftStore } from '@/store/giftStore';
 
 type MessageRole = 'oreli' | 'user' | 'choices' | 'summary' | 'products' | 'datePicker';
@@ -71,7 +71,7 @@ const GridProductList = ({ products, styles }: { products: Product[], styles: an
                     key={prod.id}
                     style={styles.productCardGrid}
                     onPress={() => {
-                        useGiftStore.getState().setSelectedProduct(prod);
+                        useGiftStore.getState().updateGiftFlow({ selectedProductId: prod.id });
                         router.push(`/product/${prod.id}`);
                     }}
                     activeOpacity={0.85}
@@ -240,7 +240,12 @@ export default function GiftFlowScreen() {
         if (realField === 'personId') {
             const name = getPersonName(choiceId);
             const p = closeOnes.find((c) => c.id === choiceId);
-            if (p) setSelectedPerson(p);
+            if (p) setSelectedPerson({
+                ...p,
+                avatarUrl: p.avatarUrl ?? null,
+                eventType: p.eventType ?? null,
+                eventDate: p.eventDate ?? null,
+            });
             const nextStep = 1;
             setStep(nextStep);
             setTimeout(() => askStep(nextStep, name), 400);
@@ -394,7 +399,7 @@ export default function GiftFlowScreen() {
                         <TouchableOpacity
                             style={styles.productCard}
                             onPress={() => {
-                                useGiftStore.getState().setSelectedProduct(prod);
+                                useGiftStore.getState().updateGiftFlow({ selectedProductId: prod.id });
                                 router.push(`/product/${prod.id}`);
                             }}
                             activeOpacity={0.85}

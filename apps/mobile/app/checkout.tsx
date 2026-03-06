@@ -14,23 +14,27 @@ import { Feather } from '@expo/vector-icons';
 import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius, Shadow } from '@/constants/Typography';
 import { useGiftStore } from '@/store/giftStore';
+import { useProductDetail, formatPrice } from '@/hooks/useCatalog';
 import { t } from '@/constants/i18n';
+
+const PREMIUM_WRAP_PRICE_CENTS = 500;
 
 export default function CheckoutScreen() {
     const Colors = useThemeColors();
     const styles = createStyles(Colors);
     const insets = useSafeAreaInsets();
-    const { selectedProduct, giftFlow, updateGiftFlow, userAddress } = useGiftStore();
+    const { giftFlow, updateGiftFlow, userAddress } = useGiftStore();
     const [loading, setLoading] = useState(false);
     const [editingMsg, setEditingMsg] = useState(false);
 
-    const product = selectedProduct;
+    const { data: product } = useProductDetail(giftFlow.selectedProductId ?? '');
+
     const premiumWrap = giftFlow.premiumWrap ?? false;
     const giftMessage = giftFlow.giftMessage ?? 'Avec tout mon amour';
-    const wrapCost = premiumWrap ? 5 : 0;
-    const total = (product?.price ?? 0) + wrapCost;
+    const totalPriceCents = (product?.priceAmount ?? 0) + (premiumWrap ? PREMIUM_WRAP_PRICE_CENTS : 0);
 
     const handleConfirm = () => {
+        // TODO: wire to real createOrder API + Stripe PaymentSheet
         setLoading(true);
         setTimeout(() => {
             setLoading(false);
@@ -53,29 +57,14 @@ export default function CheckoutScreen() {
                 {/* Product Summary */}
                 {product && (
                     <View style={[styles.productCard, { marginTop: 16 }]}>
-                        {giftFlow.surpriseLevel === 'total' ? (
-                            <>
-                                <View style={styles.productImageBox}>
-                                    <Feather name="gift" size={32} color={Colors.gold} />
-                                </View>
-                                <View style={styles.productInfo}>
-                                    <Text style={styles.productName} numberOfLines={2}>Surprise Totale Oreli</Text>
-                                    <Text style={styles.productSeller}>Sélectionné par la magie de l'IA</Text>
-                                    <Text style={[styles.productPrice, { color: Colors.gold }]}>Prix validé: {product.price}€</Text>
-                                </View>
-                            </>
-                        ) : (
-                            <>
-                                <View style={styles.productImageBox}>
-                                    <Feather name="package" size={32} color={Colors.cream} />
-                                </View>
-                                <View style={styles.productInfo}>
-                                    <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
-                                    <Text style={styles.productSeller}>{product.seller}</Text>
-                                    <Text style={styles.productPrice}>{product.price}€</Text>
-                                </View>
-                            </>
-                        )}
+                        <View style={styles.productImageBox}>
+                            <Feather name="package" size={32} color={Colors.cream} />
+                        </View>
+                        <View style={styles.productInfo}>
+                            <Text style={styles.productName} numberOfLines={2}>{product.title}</Text>
+                            <Text style={styles.productSeller}>{product.seller.displayName}</Text>
+                            <Text style={styles.productPrice}>{formatPrice(product.priceAmount, product.currency)}</Text>
+                        </View>
                     </View>
                 )}
 
@@ -149,7 +138,7 @@ export default function CheckoutScreen() {
                 <View style={styles.section}>
                     <View style={styles.priceRow}>
                         <Text style={styles.priceLabel}>{t('checkout.subtotal')}</Text>
-                        <Text style={styles.priceValue}>{product?.price ?? 0}€</Text>
+                        <Text style={styles.priceValue}>{product ? formatPrice(product.priceAmount, product.currency) : '—'}</Text>
                     </View>
                     <View style={styles.priceRow}>
                         <Text style={styles.priceLabel}>{t('checkout.shippingLabel')}</Text>
@@ -158,12 +147,12 @@ export default function CheckoutScreen() {
                     {premiumWrap && (
                         <View style={styles.priceRow}>
                             <Text style={styles.priceLabel}>{t('checkout.premiumWrap')}</Text>
-                            <Text style={styles.priceValue}>5€</Text>
+                            <Text style={styles.priceValue}>{formatPrice(PREMIUM_WRAP_PRICE_CENTS)}</Text>
                         </View>
                     )}
                     <View style={[styles.priceRow, styles.priceTotal]}>
                         <Text style={styles.priceTotalLabel}>{t('checkout.total')}</Text>
-                        <Text style={styles.priceTotalValue}>{total}€</Text>
+                        <Text style={styles.priceTotalValue}>{product ? formatPrice(totalPriceCents, product.currency) : '—'}</Text>
                     </View>
                 </View>
             </ScrollView>
@@ -179,7 +168,7 @@ export default function CheckoutScreen() {
                     {loading ? (
                         <ActivityIndicator color={Colors.obsidian} />
                     ) : (
-                        <Text style={styles.confirmBtnText}>{t('checkout.confirmText', { total })}</Text>
+                        <Text style={styles.confirmBtnText}>{t('checkout.confirmText', { total: product ? formatPrice(totalPriceCents, product.currency) : '…' })}</Text>
                     )}
                 </TouchableOpacity>
             </View>

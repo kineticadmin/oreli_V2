@@ -5,6 +5,8 @@ import {
     StyleSheet,
     ScrollView,
     TouchableOpacity,
+    Image,
+    ActivityIndicator,
     Dimensions,
     FlatList,
 } from 'react-native';
@@ -12,36 +14,54 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeColors, ThemeColors } from '@/constants/Colors';
-import { Typography, Spacing, Radius, Shadow } from '@/constants/Typography';
-import { products } from '@/data/mockData';
+import { Typography, Spacing, Radius } from '@/constants/Typography';
+import { useProductDetail, formatPrice } from '@/hooks/useCatalog';
 import { useGiftStore } from '@/store/giftStore';
 
 const { width: W } = Dimensions.get('window');
 
+const PREMIUM_WRAP_PRICE_CENTS = 500;
+
 export default function ProductDetailScreen() {
-  const Colors = useThemeColors();
-  const styles = createStyles(Colors);
+    const Colors = useThemeColors();
+    const styles = createStyles(Colors);
     const { id } = useLocalSearchParams<{ id: string }>();
     const insets = useSafeAreaInsets();
     const [activeImg, setActiveImg] = useState(0);
     const [premiumWrap, setPremiumWrap] = useState(false);
     const updateGiftFlow = useGiftStore((s) => s.updateGiftFlow);
-    const setSelectedProduct = useGiftStore((s) => s.setSelectedProduct);
 
-    const product = products.find((p) => p.id === id) ?? products[0];
+    const { data: product, isLoading } = useProductDetail(id ?? '');
 
     const handleBuy = () => {
-        setSelectedProduct(product);
-        updateGiftFlow({ premiumWrap });
+        if (!product) return;
+        updateGiftFlow({ premiumWrap, selectedProductId: product.id });
         router.push('/checkout');
     };
+
+    if (isLoading || !product) {
+        return (
+            <View style={[styles.container, styles.loadingContainer]}>
+                <TouchableOpacity style={[styles.backBtn, { top: insets.top + 8 }]} onPress={() => router.back()}>
+                    <Text style={styles.backBtnText}>←</Text>
+                </TouchableOpacity>
+                <ActivityIndicator color={Colors.gold} size="large" />
+            </View>
+        );
+    }
+
+    const galleryImages = product.images.length > 0
+        ? product.images.sort((a, b) => a.position - b.position)
+        : [{ id: 'cover', url: product.coverImageUrl ?? '', position: 0 }];
+
+    const totalPriceCents = product.priceAmount + (premiumWrap ? PREMIUM_WRAP_PRICE_CENTS : 0);
 
     return (
         <View style={[styles.container, { backgroundColor: Colors.obsidian }]}>
             {/* Image Gallery */}
             <View style={styles.gallery}>
                 <FlatList
-                    data={product.images}
+                    data={galleryImages}
                     horizontal
                     pagingEnabled
                     showsHorizontalScrollIndicator={false}
@@ -51,13 +71,16 @@ export default function ProductDetailScreen() {
                     }}
                     renderItem={({ item }) => (
                         <View style={styles.galleryImageWrap}>
-                            <Text style={styles.galleryPlaceholder}>🖼</Text>
+                            {item.url ? (
+                                <Image source={{ uri: item.url }} style={styles.galleryImage} />
+                            ) : (
+                                <Text style={styles.galleryPlaceholder}>🖼</Text>
+                            )}
                         </View>
                     )}
-                    keyExtractor={(_, i) => String(i)}
+                    keyExtractor={(item) => item.id}
                 />
 
-                {/* Back button */}
                 <TouchableOpacity
                     style={[styles.backBtn, { top: insets.top + 8 }]}
                     onPress={() => router.back()}
@@ -65,9 +88,8 @@ export default function ProductDetailScreen() {
                     <Text style={styles.backBtnText}>←</Text>
                 </TouchableOpacity>
 
-                {/* Image dots */}
                 <View style={styles.galleryDots}>
-                    {product.images.map((_, i) => (
+                    {galleryImages.map((_, i) => (
                         <View
                             key={i}
                             style={[styles.galleryDot, i === activeImg ? styles.galleryDotActive : styles.galleryDotInactive]}
@@ -75,7 +97,6 @@ export default function ProductDetailScreen() {
                     ))}
                 </View>
 
-                {/* Gradient overlay */}
                 <LinearGradient
                     colors={['transparent', Colors.obsidian]}
                     style={styles.galleryGradient}
@@ -87,40 +108,21 @@ export default function ProductDetailScreen() {
                 contentContainerStyle={{ paddingBottom: 140 }}
                 style={styles.scrollContent}
             >
-                {/* Header */}
                 <View style={styles.productHeader}>
                     <View style={styles.productHeaderTop}>
-                        <View style={styles.categoryBadge}>
-                            <Text style={styles.categoryBadgeText}>{product.category}</Text>
-                        </View>
-                        {product.deliveryExpress && (
+                        {product.category && (
+                            <View style={styles.categoryBadge}>
+                                <Text style={styles.categoryBadgeText}>{product.category.name}</Text>
+                            </View>
+                        )}
+                        {product.isLastMinuteOk && (
                             <View style={styles.expressBadge}>
                                 <Text style={styles.expressBadgeText}>⚡ Express</Text>
                             </View>
                         )}
                     </View>
-                    <Text style={styles.productName}>{product.name}</Text>
-                    <Text style={styles.sellerName}>{product.seller}</Text>
-
-                    <View style={styles.ratingRow}>
-                        <Text style={styles.stars}>★ {product.rating}</Text>
-                        <Text style={styles.ratingCount}> (127 avis)</Text>
-                    </View>
-                </View>
-
-                {/* AI justification */}
-                <View style={styles.aiCard}>
-                    <View style={styles.aiCardHeader}>
-                        <Text style={styles.aiIcon}>✦</Text>
-                        <Text style={styles.aiTitle}>Pourquoi ce cadeau ?</Text>
-                    </View>
-                    <Text style={styles.aiText}>{product.aiJustification}</Text>
-                    <View style={styles.matchRow}>
-                        <View style={styles.matchBar}>
-                            <View style={[styles.matchFill, { width: `${product.matchScore}%` }]} />
-                        </View>
-                        <Text style={styles.matchPercent}>{product.matchScore}% match</Text>
-                    </View>
+                    <Text style={styles.productName}>{product.title}</Text>
+                    <Text style={styles.sellerName}>{product.seller.displayName}</Text>
                 </View>
 
                 {/* Description */}
@@ -154,7 +156,7 @@ export default function ProductDetailScreen() {
                             <Text style={styles.wrapSubtitle}>Papier cadeau élégant + carte manuscrite</Text>
                         </View>
                         <View style={styles.wrapRight}>
-                            <Text style={styles.wrapPrice}>+5€</Text>
+                            <Text style={styles.wrapPrice}>+{formatPrice(PREMIUM_WRAP_PRICE_CENTS)}</Text>
                             <View style={[styles.wrapCheckbox, premiumWrap && styles.wrapCheckboxActive]}>
                                 {premiumWrap && <Text style={styles.wrapCheck}>✓</Text>}
                             </View>
@@ -167,7 +169,7 @@ export default function ProductDetailScreen() {
             <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
                 <View style={styles.priceRow}>
                     <Text style={styles.priceLabel}>Total</Text>
-                    <Text style={styles.priceValue}>{product.price + (premiumWrap ? 5 : 0)}€</Text>
+                    <Text style={styles.priceValue}>{formatPrice(totalPriceCents, product.currency)}</Text>
                 </View>
                 <TouchableOpacity style={styles.buyBtn} onPress={handleBuy} activeOpacity={0.85}>
                     <Text style={styles.buyBtnText}>Offrir ce cadeau  →</Text>
@@ -179,8 +181,10 @@ export default function ProductDetailScreen() {
 
 const createStyles = (Colors: ThemeColors) => StyleSheet.create({
     container: { flex: 1 },
+    loadingContainer: { backgroundColor: Colors.obsidian, alignItems: 'center', justifyContent: 'center' },
     gallery: { height: 360, position: 'relative' },
     galleryImageWrap: { width: W, height: 360, backgroundColor: Colors.stone, alignItems: 'center', justifyContent: 'center' },
+    galleryImage: { width: W, height: 360 },
     galleryPlaceholder: { fontSize: 64 },
     backBtn: { position: 'absolute', left: 16, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center' },
     backBtnText: { fontSize: 20, color: Colors.cream },
@@ -198,18 +202,6 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
     expressBadgeText: { fontSize: 11, fontFamily: Typography.semibold, color: Colors.gold },
     productName: { fontSize: Typography.xl, fontFamily: Typography.bold, color: Colors.cream, letterSpacing: -0.6, lineHeight: 28, marginBottom: 4 },
     sellerName: { fontSize: Typography.sm, fontFamily: Typography.medium, color: Colors.muted, marginBottom: 10 },
-    ratingRow: { flexDirection: 'row', alignItems: 'center' },
-    stars: { fontSize: Typography.sm, fontFamily: Typography.semibold, color: Colors.gold },
-    ratingCount: { fontSize: Typography.sm, fontFamily: Typography.regular, color: Colors.muted },
-    aiCard: { marginHorizontal: Spacing.xl, padding: Spacing.xl, backgroundColor: Colors.charcoal, borderRadius: Radius.xl, borderWidth: 1, borderColor: Colors.gold + '33', marginBottom: Spacing.xl },
-    aiCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-    aiIcon: { fontSize: 16, color: Colors.gold },
-    aiTitle: { fontSize: Typography.sm, fontFamily: Typography.bold, color: Colors.cream },
-    aiText: { fontSize: Typography.sm, fontFamily: Typography.regular, color: Colors.muted, lineHeight: 20, marginBottom: 12 },
-    matchRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-    matchBar: { flex: 1, height: 4, backgroundColor: Colors.warm, borderRadius: 2 },
-    matchFill: { height: 4, backgroundColor: Colors.gold, borderRadius: 2 },
-    matchPercent: { fontSize: Typography.xs, fontFamily: Typography.semibold, color: Colors.gold },
     section: { paddingHorizontal: Spacing.xl, marginBottom: Spacing.xl },
     sectionTitle: { fontSize: Typography.sm, fontFamily: Typography.bold, color: Colors.cream, marginBottom: 12 },
     description: { fontSize: Typography.sm, fontFamily: Typography.regular, color: Colors.muted, lineHeight: 22 },

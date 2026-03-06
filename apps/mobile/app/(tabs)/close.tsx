@@ -11,14 +11,35 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius, Shadow } from '@/constants/Typography';
-import { closeOnes } from '@/data/mockData';
 import { useGiftStore } from '@/store/giftStore';
+import { useRelationships, type RelationshipSummary } from '@/hooks/useRelationships';
+
+// Adapte un RelationshipSummary de l'API vers la forme attendue par les composants
+function toCloseOneViewModel(rel: RelationshipSummary) {
+    const nearestEvent = rel.upcomingEvents[0];
+    return {
+        id: rel.id,
+        name: rel.displayName,
+        relationship: rel.relationshipType,
+        avatar: rel.displayName.charAt(0).toUpperCase(),
+        avatarUrl: null as string | null,
+        eventType: nearestEvent?.eventType ?? null,
+        eventDate: nearestEvent?.eventDate ?? null,
+        daysUntilEvent: nearestEvent?.daysUntil ?? undefined,
+        // Champs requis par setSelectedPerson (giftStore)
+        apiId: rel.id,
+        preferences: rel.preferences,
+    };
+}
 
 export default function CloseScreen() {
     const Colors = useThemeColors();
     const styles = createStyles(Colors);
     const insets = useSafeAreaInsets();
     const setSelectedPerson = useGiftStore((s) => s.setSelectedPerson);
+
+    const { data: relationships, isLoading } = useRelationships();
+    const closeOnes = (relationships ?? []).map(toCloseOneViewModel);
 
     return (
         <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -35,6 +56,16 @@ export default function CloseScreen() {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+                {isLoading && (
+                    <Text style={{ color: Colors.muted, textAlign: 'center', marginTop: 40, fontFamily: 'Inter-Regular' }}>
+                        Chargement...
+                    </Text>
+                )}
+                {!isLoading && closeOnes.length === 0 && (
+                    <Text style={{ color: Colors.muted, textAlign: 'center', marginTop: 40, fontFamily: 'Inter-Regular' }}>
+                        Ajoutez vos proches pour commencer.
+                    </Text>
+                )}
                 <View style={styles.list}>
                     {closeOnes.map((person) => (
                         <TouchableOpacity
