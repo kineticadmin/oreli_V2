@@ -4,6 +4,8 @@ import { requestLogger } from './middleware/logger.js';
 import { handleError } from './middleware/error-handler.js';
 import { healthRouter } from './routes/health.router.js';
 import { authRouter } from './routes/auth.router.js';
+import { catalogRouter } from './routes/catalog.router.js';
+import { sellerRouter } from './routes/seller.router.js';
 
 const ALLOWED_ORIGINS = (process.env['ALLOWED_ORIGINS'] ?? '')
   .split(',')
@@ -29,14 +31,14 @@ export function buildApp(): Hono {
 
   app.route('/health', healthRouter);
   app.route('/auth', authRouter);
+  app.route('/catalog', catalogRouter);
+  app.route('/sellers', sellerRouter);
 
   // Les routers suivants sont ajoutés au fil des phases :
-  // app.route('/catalog', catalogRouter);
   // app.route('/gift', giftRouter);
   // app.route('/orders', ordersRouter);
   // app.route('/users', usersRouter);
   // app.route('/relationships', relationshipsRouter);
-  // app.route('/seller', sellerRouter);
   // app.route('/webhooks', webhooksRouter);
 
   // ─── Gestion d'erreurs globale ─────────────────────────────────────────
