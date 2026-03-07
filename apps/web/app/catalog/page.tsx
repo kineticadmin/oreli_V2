@@ -9,7 +9,7 @@ export default function CatalogPage() {
   const { data, isLoading, error } = useProducts(filters);
   const { data: categories } = useCategories();
 
-  const products = data?.data ?? [];
+  const products = data?.items ?? [];
 
   function toggleCategory(categoryId: string) {
     setFilters((prev) =>

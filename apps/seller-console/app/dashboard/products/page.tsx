@@ -56,7 +56,7 @@ export default function ProductsPage() {
   const { data, isLoading, error } = useProducts(statusFilter);
   const archiveProduct = useArchiveProduct();
 
-  const products = data?.data ?? [];
+  const products = data?.items ?? [];
 
   function handleArchive(productId: string, title: string) {
     if (!confirm(`Archiver "${title}" ? Cette action est irréversible.`)) return;

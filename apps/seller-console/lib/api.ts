@@ -52,7 +52,7 @@ export interface SellerProduct {
 }
 
 export interface SellerProductsPage {
-  data: SellerProduct[];
+  items: SellerProduct[];
   nextCursor: string | null;
   hasMore: boolean;
 }

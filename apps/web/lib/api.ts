@@ -65,7 +65,7 @@ export interface Category {
 }
 
 export interface CursorPage<T> {
-  data: T[];
+  items: T[];
   nextCursor: string | null;
   hasMore: boolean;
 }

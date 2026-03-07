@@ -10,7 +10,7 @@ export default function DashboardPage() {
   const { data: productsPage } = useProducts();
   const { data: orders } = useOrders();
 
-  const activeProductCount = productsPage?.data.filter((p) => p.status === 'active').length ?? 0;
+  const activeProductCount = productsPage?.items.filter((p) => p.status === 'active').length ?? 0;
   const pendingOrderCount = orders?.filter((o) => o.status === 'paid').length ?? 0;
   const totalRevenueCents = orders
     ?.filter((o) => ['delivered', 'shipped', 'in_preparation', 'accepted'].includes(o.status))
