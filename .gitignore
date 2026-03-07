@@ -42,3 +42,9 @@ apps/api/dist/
 
 # pnpm
 pnpm-debug.log
+
+# TypeScript build info (build artifacts, not source)
+*.tsbuildinfo
+
+# Next.js build output
+.next/
