@@ -131,7 +131,14 @@ export async function rotateRefreshToken(
     userId,
     matchingToken.familyId,
   );
-  const newAccessToken = issueAccessToken(userId, 'user');
+
+  // Inclure le sellerId si l'utilisateur est vendeur
+  const sellerMembership = await prisma.sellerUser.findFirst({
+    where: { userId },
+    select: { sellerId: true },
+  });
+  const role = sellerMembership ? 'seller' : 'user';
+  const newAccessToken = issueAccessToken(userId, role, sellerMembership?.sellerId);
 
   return {
     accessToken: newAccessToken,

@@ -110,6 +110,20 @@ export async function onboardSeller(
   return toSellerProfile(newSeller);
 }
 
+/**
+ * Retourne le profil vendeur de l'utilisateur connecté, ou null s'il n'est pas vendeur.
+ * Utilisé par GET /sellers/me pour le bootstrap de la seller console.
+ */
+export async function getMySellerProfile(userId: string): Promise<SellerProfile | null> {
+  const membership = await prisma.sellerUser.findFirst({
+    where: { userId },
+    include: { seller: { include: { policy: true } } },
+  });
+
+  if (!membership) return null;
+  return toSellerProfile(membership.seller as RawSellerWithPolicy);
+}
+
 export async function getSellerProfile(sellerId: string): Promise<SellerProfile> {
   const seller = await prisma.seller.findUnique({
     where: { id: sellerId },

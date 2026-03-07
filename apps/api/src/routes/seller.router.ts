@@ -5,6 +5,7 @@ import { requireAuth, requireSellerOwnership } from '../middleware/auth.middlewa
 import {
   onboardSeller,
   getSellerProfile,
+  getMySellerProfile,
   listSellerProducts,
   createSellerProduct,
   updateSellerProduct,
@@ -46,6 +47,19 @@ const sellerProductsQuerySchema = z.object({
   cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(100).optional(),
   status: z.enum(['draft', 'pending_review', 'active', 'paused', 'archived']).optional(),
+});
+
+// ─── Routes authentifiées courtes ─────────────────────────────────────────
+
+/**
+ * GET /sellers/me
+ * Retourne le profil vendeur de l'utilisateur connecté (null si pas vendeur).
+ * Utilisé par la seller console au démarrage pour récupérer le sellerId.
+ */
+sellerRouter.get('/me', requireAuth, async (context) => {
+  const userId = context.get('authenticatedUserId');
+  const profile = await getMySellerProfile(userId);
+  return context.json(profile, 200);
 });
 
 // ─── Routes publiques ──────────────────────────────────────────────────────

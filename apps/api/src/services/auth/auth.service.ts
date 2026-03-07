@@ -58,7 +58,7 @@ export async function signupUser(input: SignupInput): Promise<AuthTokens> {
     },
   });
 
-  return buildAuthTokens(newUser.id, 'user');
+  return buildAuthTokens(newUser.id);
 }
 
 export async function loginUser(input: LoginInput): Promise<AuthTokens> {
@@ -89,7 +89,7 @@ export async function loginUser(input: LoginInput): Promise<AuthTokens> {
     data: { lastLoginAt: new Date() },
   });
 
-  return buildAuthTokens(user.id, 'user');
+  return buildAuthTokens(user.id);
 }
 
 export async function refreshUserTokens(plainRefreshToken: string, userId: string): Promise<AuthTokens> {
@@ -132,7 +132,7 @@ export async function upsertOauthUser(input: {
     if (existingOauthAccount.user.status !== 'active') {
       throw new UnauthorizedError('Ce compte est suspendu');
     }
-    return buildAuthTokens(existingOauthAccount.userId, 'user');
+    return buildAuthTokens(existingOauthAccount.userId);
   }
 
   // Chercher si un compte email existe déjà — on les lie
@@ -148,7 +148,7 @@ export async function upsertOauthUser(input: {
         providerId: input.providerId,
       },
     });
-    return buildAuthTokens(existingUserByEmail.id, 'user');
+    return buildAuthTokens(existingUserByEmail.id);
   }
 
   // Nouveau compte complet
@@ -167,14 +167,26 @@ export async function upsertOauthUser(input: {
     },
   });
 
-  return buildAuthTokens(newUser.id, 'user');
+  return buildAuthTokens(newUser.id);
 }
 
 // ─── Helper privé ─────────────────────────────────────────────────────────
 
-async function buildAuthTokens(userId: string, role: string): Promise<AuthTokens> {
+/**
+ * Construit une paire de tokens en incluant le sellerId si l'utilisateur est vendeur.
+ * Appelé à chaque login, signup, et rotation de refresh token.
+ */
+async function buildAuthTokens(userId: string): Promise<AuthTokens> {
+  const sellerMembership = await prisma.sellerUser.findFirst({
+    where: { userId },
+    select: { sellerId: true },
+  });
+
+  const role = sellerMembership ? 'seller' : 'user';
+  const sellerId = sellerMembership?.sellerId;
+
   const [accessToken, refreshTokenBundle] = await Promise.all([
-    Promise.resolve(issueAccessToken(userId, role)),
+    Promise.resolve(issueAccessToken(userId, role, sellerId)),
     issueRefreshToken(userId),
   ]);
 
