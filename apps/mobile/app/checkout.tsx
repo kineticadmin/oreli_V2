@@ -7,14 +7,17 @@ import {
     TouchableOpacity,
     TextInput,
     ActivityIndicator,
+    Alert,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
+import { useStripe } from '@stripe/stripe-react-native';
 import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius, Shadow } from '@/constants/Typography';
 import { useGiftStore } from '@/store/giftStore';
 import { useProductDetail, formatPrice } from '@/hooks/useCatalog';
+import { useCreateOrder, toSurpriseMode, toDeliveryDate } from '@/hooks/useCreateOrder';
 import { t } from '@/constants/i18n';
 
 const PREMIUM_WRAP_PRICE_CENTS = 500;
@@ -24,8 +27,10 @@ export default function CheckoutScreen() {
     const styles = createStyles(Colors);
     const insets = useSafeAreaInsets();
     const { giftFlow, updateGiftFlow, userAddress } = useGiftStore();
-    const [loading, setLoading] = useState(false);
     const [editingMsg, setEditingMsg] = useState(false);
+
+    const { initPaymentSheet, presentPaymentSheet } = useStripe();
+    const createOrder = useCreateOrder();
 
     const { data: product } = useProductDetail(giftFlow.selectedProductId ?? '');
 
@@ -33,14 +38,60 @@ export default function CheckoutScreen() {
     const giftMessage = giftFlow.giftMessage ?? 'Avec tout mon amour';
     const totalPriceCents = (product?.priceAmount ?? 0) + (premiumWrap ? PREMIUM_WRAP_PRICE_CENTS : 0);
 
-    const handleConfirm = () => {
-        // TODO: wire to real createOrder API + Stripe PaymentSheet
-        setLoading(true);
-        setTimeout(() => {
-            setLoading(false);
-            router.replace('/confirmation');
-        }, 1600);
+    const handleConfirm = async () => {
+        if (!product || !giftFlow.selectedProductId) return;
+
+        // Construire l'adresse en remplissant les champs manquants avec des valeurs par défaut Bruxelles
+        const deliveryAddress = {
+            name: userAddress.name,
+            line: userAddress.line,
+            city: 'Bruxelles',
+            postalCode: '1000',
+            country: 'BE',
+        };
+
+        createOrder.mutate(
+            {
+                items: [{ productId: giftFlow.selectedProductId, quantity: 1 }],
+                deliveryAddress,
+                requestedDeliveryDate: toDeliveryDate(giftFlow.deliveryDate),
+                giftMessage: giftMessage || undefined,
+                surpriseMode: toSurpriseMode(giftFlow.surpriseLevel),
+            },
+            {
+                onSuccess: async ({ stripeClientSecret }) => {
+                    const { error: initError } = await initPaymentSheet({
+                        paymentIntentClientSecret: stripeClientSecret,
+                        merchantDisplayName: 'Oreli',
+                        style: 'alwaysDark',
+                        primaryButtonLabel: `Payer ${formatPrice(totalPriceCents, product.currency)}`,
+                    });
+
+                    if (initError) {
+                        Alert.alert('Erreur de paiement', initError.message);
+                        return;
+                    }
+
+                    const { error: presentError } = await presentPaymentSheet();
+
+                    if (presentError) {
+                        if (presentError.code !== 'Canceled') {
+                            Alert.alert('Paiement échoué', presentError.message);
+                        }
+                        return;
+                    }
+
+                    // Paiement confirmé côté Stripe — webhook traitera la suite
+                    router.replace('/confirmation');
+                },
+                onError: () => {
+                    Alert.alert('Erreur', 'Impossible de créer la commande. Réessaie.');
+                },
+            },
+        );
     };
+
+    const isLoading = createOrder.isPending;
 
     return (
         <View style={[styles.container, { backgroundColor: Colors.obsidian }]}>
@@ -83,29 +134,13 @@ export default function CheckoutScreen() {
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>{t('checkout.payment')}</Text>
                     <View style={styles.card}>
-                        <View style={styles.payMethodRow}>
-                            <TouchableOpacity style={styles.payBtn}>
-                                <Text style={styles.payBtnText}> {t('common.pay')}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.payBtn}>
-                                <Text style={styles.payBtnText}>{t('common.gpay')}</Text>
-                            </TouchableOpacity>
+                        <View style={styles.stripeRow}>
+                            <Feather name="lock" size={16} color={Colors.gold} />
+                            <Text style={styles.stripeText}>Paiement sécurisé par Stripe</Text>
                         </View>
-                        <View style={styles.dividerRow}>
-                            <View style={styles.divider} />
-                            <Text style={styles.dividerText}>{t('common.orByCard')}</Text>
-                            <View style={styles.divider} />
-                        </View>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Numéro de carte"
-                            placeholderTextColor={Colors.muted}
-                            keyboardType="numeric"
-                        />
-                        <View style={styles.inputRow}>
-                            <TextInput style={[styles.input, styles.inputHalf]} placeholder="MM/AA" placeholderTextColor={Colors.muted} />
-                            <TextInput style={[styles.input, styles.inputHalf]} placeholder="CVC" placeholderTextColor={Colors.muted} keyboardType="numeric" />
-                        </View>
+                        <Text style={styles.stripeSubtext}>
+                            Carte, Apple Pay, Google Pay — la fenêtre de paiement s'ouvre à la confirmation.
+                        </Text>
                     </View>
                 </View>
 
@@ -160,15 +195,17 @@ export default function CheckoutScreen() {
             {/* CTA */}
             <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
                 <TouchableOpacity
-                    style={styles.confirmBtn}
+                    style={[styles.confirmBtn, (!product || isLoading) && styles.confirmBtnDisabled]}
                     onPress={handleConfirm}
-                    disabled={loading}
+                    disabled={!product || isLoading}
                     activeOpacity={0.85}
                 >
-                    {loading ? (
+                    {isLoading ? (
                         <ActivityIndicator color={Colors.obsidian} />
                     ) : (
-                        <Text style={styles.confirmBtnText}>{t('checkout.confirmText', { total: product ? formatPrice(totalPriceCents, product.currency) : '…' })}</Text>
+                        <Text style={styles.confirmBtnText}>
+                            {t('checkout.confirmText', { total: product ? formatPrice(totalPriceCents, product.currency) : '…' })}
+                        </Text>
                     )}
                 </TouchableOpacity>
             </View>
@@ -198,15 +235,10 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
     addressLine: { fontSize: Typography.sm, fontFamily: Typography.regular, color: Colors.muted, marginBottom: 12 },
     modifyBtn: {},
     modifyBtnText: { fontSize: Typography.xs, fontFamily: Typography.semibold, color: Colors.cream, textDecorationLine: 'underline' },
-    payMethodRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
-    payBtn: { flex: 1, backgroundColor: Colors.stone, paddingVertical: 12, borderRadius: Radius.lg, alignItems: 'center', borderWidth: 1, borderColor: Colors.warm },
-    payBtnText: { fontSize: Typography.sm, fontFamily: Typography.semibold, color: Colors.cream },
-    dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-    divider: { flex: 1, height: 1, backgroundColor: Colors.warm },
-    dividerText: { fontSize: 11, fontFamily: Typography.regular, color: Colors.muted },
+    stripeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+    stripeText: { fontSize: Typography.sm, fontFamily: Typography.semibold, color: Colors.cream },
+    stripeSubtext: { fontSize: Typography.xs, fontFamily: Typography.regular, color: Colors.muted, lineHeight: 18 },
     input: { backgroundColor: Colors.stone, borderRadius: Radius.lg, padding: 14, fontSize: Typography.sm, fontFamily: Typography.regular, color: Colors.cream, borderWidth: 1, borderColor: Colors.warm, marginBottom: 8 },
-    inputRow: { flexDirection: 'row', gap: 8 },
-    inputHalf: { flex: 1, marginBottom: 0 },
     inputMessage: { minHeight: 80, textAlignVertical: 'top' },
     messageCard: { marginTop: 0 },
     messageText: { fontSize: Typography.sm, fontFamily: Typography.regular, color: Colors.muted, fontStyle: 'italic', lineHeight: 22 },
@@ -218,5 +250,6 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
     priceTotalValue: { fontSize: Typography.xl, fontFamily: Typography.bold, color: Colors.cream },
     footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: Spacing.xl, paddingTop: 16, backgroundColor: Colors.obsidian + 'F0', borderTopWidth: 1, borderTopColor: Colors.warm },
     confirmBtn: { backgroundColor: Colors.gold, paddingVertical: 17, borderRadius: Radius.full, alignItems: 'center' },
+    confirmBtnDisabled: { opacity: 0.5 },
     confirmBtnText: { fontSize: Typography.base, fontFamily: Typography.semibold, color: Colors.obsidian },
 });

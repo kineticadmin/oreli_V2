@@ -4,12 +4,15 @@ import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { StripeProvider } from '@stripe/stripe-react-native';
 import { useThemeColors } from '@/constants/Colors';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import { AppSplashScreen } from '@/components/AppSplashScreen';
 import { useAuthStore } from '@/store/authStore';
 import '../global.css';
+
+const STRIPE_PUBLISHABLE_KEY = process.env['EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY'] ?? '';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -58,6 +61,7 @@ export default function RootLayout() {
 
     return (
         <QueryClientProvider client={queryClient}>
+            <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY} merchantIdentifier="merchant.com.oreli.app">
             <GestureHandlerRootView style={{ flex: 1 }}>
                 <SafeAreaProvider>
                     <StatusBar style="light" backgroundColor={Colors.obsidian} />
@@ -88,6 +92,7 @@ export default function RootLayout() {
                     )}
                 </SafeAreaProvider>
             </GestureHandlerRootView>
+            </StripeProvider>
         </QueryClientProvider>
     );
 }
