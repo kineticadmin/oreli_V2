@@ -106,7 +106,7 @@ export default function OrdersPage() {
                       <span className="text-muted text-xs">{new Date(order.createdAt).toLocaleDateString('fr-BE')}</span>
                     </div>
 
-                    <p className="text-cream text-sm font-medium">{order.buyerName}</p>
+                    <p className="text-cream text-sm font-medium">{order.buyerFirstName}</p>
 
                     <div className="mt-2 space-y-0.5">
                       {order.items.map((item, i) => (
@@ -120,8 +120,8 @@ export default function OrdersPage() {
                       <p className="text-muted text-xs mt-2 italic">&quot;{order.giftMessage}&quot;</p>
                     )}
 
-                    {order.trackingCode && (
-                      <p className="text-muted text-xs mt-1">Suivi : <span className="text-cream">{order.trackingCode}</span></p>
+                    {order.fulfillment?.trackingCode && (
+                      <p className="text-muted text-xs mt-1">Suivi : <span className="text-cream">{order.fulfillment.trackingCode}</span></p>
                     )}
                   </div>
 

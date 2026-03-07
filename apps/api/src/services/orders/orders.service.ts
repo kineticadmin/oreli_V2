@@ -61,6 +61,7 @@ export interface SellerOrderSummary {
   requestedDeliveryDate: Date;
   totalAmount: number;
   currency: string;
+  giftMessage: string | null;
   items: { productTitle: string; quantity: number; unitPriceAmount: number }[];
   fulfillment: {
     id: string;
@@ -314,6 +315,7 @@ export async function listSellerOrders(
     requestedDeliveryDate: order.requestedDeliveryDate,
     totalAmount: order.totalAmount,
     currency: order.currency,
+    giftMessage: order.giftMessage ?? null,
     items: order.items.map((item) => ({
       productTitle: item.product.title,
       quantity: item.quantity,

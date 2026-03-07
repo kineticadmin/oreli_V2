@@ -58,10 +58,16 @@ export interface SellerProductsPage {
 }
 
 export interface SellerOrderItem {
-  productId: string;
   productTitle: string;
   quantity: number;
-  unitPrice: number;
+  unitPriceAmount: number;
+}
+
+export interface SellerOrderFulfillment {
+  id: string;
+  status: string;
+  acceptDeadline: string;
+  trackingCode: string | null;
 }
 
 export interface SellerOrder {
@@ -69,12 +75,12 @@ export interface SellerOrder {
   status: string;
   totalAmount: number;
   currency: string;
-  buyerName: string;
+  buyerFirstName: string;
   giftMessage: string | null;
-  trackingCode: string | null;
+  requestedDeliveryDate: string;
   items: SellerOrderItem[];
+  fulfillment: SellerOrderFulfillment | null;
   createdAt: string;
-  requestedDeliveryDate: string | null;
 }
 
 // ─── Fetch wrapper ────────────────────────────────────────────────────────
