@@ -17,7 +17,6 @@ import { Feather } from '@expo/vector-icons';
 import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius, Shadow } from '@/constants/Typography';
 import {
-    closeOnes,
     occasions,
     budgetOptions,
     deliveryOptions,
@@ -25,6 +24,7 @@ import {
 } from '@/data/mockData';
 import { useGiftStore } from '@/store/giftStore';
 import { useRecommendation, type RecommendedProduct } from '@/hooks/useRecommendation';
+import { useRelationships } from '@/hooks/useRelationships';
 import { formatPrice } from '@/hooks/useCatalog';
 
 type MessageRole = 'oreli' | 'user' | 'choices' | 'summary' | 'products' | 'datePicker';
@@ -96,13 +96,6 @@ const GridProductList = ({ products, styles }: { products: RecommendedProduct[],
     );
 };
 
-const personChoices: Choice[] = closeOnes.map((p) => ({
-    id: p.id,
-    label: p.name,
-    sublabel: p.relationship,
-    icon: 'user',
-}));
-
 const occasionChoices: Choice[] = occasions.map((o) => ({
     id: o.label,
     label: o.label,
@@ -115,6 +108,15 @@ export default function GiftFlowScreen() {
     const insets = useSafeAreaInsets();
     const { selectedPerson, setSelectedPerson, updateGiftFlow } = useGiftStore();
     const recommend = useRecommendation();
+    const { data: relationships } = useRelationships();
+
+    const personChoices: Choice[] = (relationships ?? []).map((rel) => ({
+        id: rel.id,
+        label: rel.displayName,
+        sublabel: rel.relationshipType,
+        icon: 'user',
+    }));
+
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isTyping, setIsTyping] = useState(false);
     const [inputValue, setInputValue] = useState('');
@@ -127,7 +129,8 @@ export default function GiftFlowScreen() {
     const [step, setStep] = useState(selectedPerson ? 1 : 0);
     const [selectedDate, setSelectedDate] = useState(new Date());
 
-    const getPersonName = (id: string) => closeOnes.find((p) => p.id === id)?.name || '';
+    const getPersonName = (id: string) =>
+        relationships?.find((r) => r.id === id)?.displayName || '';
 
     const addMessage = (msg: Omit<ChatMessage, 'id'>) => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -239,12 +242,17 @@ export default function GiftFlowScreen() {
 
         if (realField === 'personId') {
             const name = getPersonName(choiceId);
-            const p = closeOnes.find((c) => c.id === choiceId);
-            if (p) setSelectedPerson({
-                ...p,
-                avatarUrl: p.avatarUrl ?? null,
-                eventType: p.eventType ?? null,
-                eventDate: p.eventDate ?? null,
+            const rel = relationships?.find((r) => r.id === choiceId);
+            if (rel) setSelectedPerson({
+                id: rel.id,
+                name: rel.displayName,
+                relationship: rel.relationshipType,
+                avatar: rel.displayName.charAt(0).toUpperCase(),
+                avatarUrl: null,
+                eventType: rel.upcomingEvents[0]?.eventType ?? null,
+                eventDate: rel.upcomingEvents[0]?.eventDate ?? null,
+                apiId: rel.id,
+                preferences: rel.preferences,
             });
             const nextStep = 1;
             setStep(nextStep);

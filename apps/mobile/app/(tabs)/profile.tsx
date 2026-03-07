@@ -5,6 +5,7 @@ import {
     StyleSheet,
     ScrollView,
     TouchableOpacity,
+    ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,16 +13,21 @@ import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius, Shadow } from '@/constants/Typography';
 import { useGiftStore } from '@/store/giftStore';
 import { useLogout } from '@/hooks/useAuth';
+import { useProfile, useAddresses } from '@/hooks/useProfile';
 
 export default function ProfileScreen() {
     const Colors = useThemeColors();
     const styles = createStyles(Colors);
     const insets = useSafeAreaInsets();
-    const { userName, userAddress, theme, setTheme } = useGiftStore();
+    const { theme, setTheme } = useGiftStore();
     const logoutMutation = useLogout();
 
-    const displayName = userName || 'Profil';
-    const initial = displayName.charAt(0).toUpperCase();
+    const { data: profile, isLoading: isLoadingProfile } = useProfile();
+    const { data: addresses } = useAddresses();
+
+    const displayName = profile ? `${profile.firstName} ${profile.lastName}` : '…';
+    const initial = (profile?.firstName ?? '?').charAt(0).toUpperCase();
+    const defaultAddress = addresses?.find((a) => a.isDefault) ?? addresses?.[0];
 
     const toggleTheme = () => {
         setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -37,28 +43,46 @@ export default function ProfileScreen() {
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
                 {/* Avatar + name */}
                 <View style={styles.profileSection}>
-                    <View style={styles.avatar}>
-                        <Text style={styles.avatarText}>{initial}</Text>
-                    </View>
-                    <Text style={styles.userName}>{displayName}</Text>
+                    {isLoadingProfile ? (
+                        <ActivityIndicator color={Colors.gold} />
+                    ) : (
+                        <>
+                            <View style={styles.avatar}>
+                                <Text style={styles.avatarText}>{initial}</Text>
+                            </View>
+                            <Text style={styles.userName}>{displayName}</Text>
+                            {profile?.email && (
+                                <Text style={styles.userEmail}>{profile.email}</Text>
+                            )}
+                        </>
+                    )}
                 </View>
 
                 {/* Address */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Adresse de livraison</Text>
                     <View style={styles.card}>
-                        <View style={styles.cardRow}>
-                            <View style={styles.cardIcon}>
-                                <Text style={styles.cardIconText}>📍</Text>
+                        {defaultAddress ? (
+                            <View style={styles.cardRow}>
+                                <View style={styles.cardIcon}>
+                                    <Text style={styles.cardIconText}>📍</Text>
+                                </View>
+                                <View style={styles.cardContent}>
+                                    <Text style={styles.cardLabel}>{defaultAddress.name}</Text>
+                                    <Text style={styles.cardValue}>{defaultAddress.line}, {defaultAddress.postalCode} {defaultAddress.city}</Text>
+                                </View>
                             </View>
-                            <View style={styles.cardContent}>
-                                <Text style={styles.cardLabel}>{userAddress.name}</Text>
-                                <Text style={styles.cardValue}>{userAddress.line}</Text>
+                        ) : (
+                            <View style={styles.cardRow}>
+                                <View style={styles.cardIcon}>
+                                    <Text style={styles.cardIconText}>📍</Text>
+                                </View>
+                                <View style={styles.cardContent}>
+                                    <Text style={styles.cardLabel}>Aucune adresse</Text>
+                                    <Text style={styles.cardValue}>Ajoutez une adresse de livraison</Text>
+                                </View>
                             </View>
-                            <TouchableOpacity style={styles.editBtn}>
-                                <Text style={styles.editBtnText}>Modifier</Text>
-                            </TouchableOpacity>
-                        </View>
+                        )}
                     </View>
                 </View>
 

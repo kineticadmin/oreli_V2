@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { jwtDecode } from 'jwt-decode';
 import { tokenStorage, apiRequest } from '@/lib/api';
+import { useGiftStore } from './giftStore';
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -14,6 +15,8 @@ interface DecodedAccessToken {
 interface AuthState {
   userId: string | null;
   userRole: string | null;
+  userFirstName: string | null;
+  userEmail: string | null;
   isAuthenticated: boolean;
   isLoadingAuth: boolean;
 
@@ -25,9 +28,20 @@ interface AuthState {
 
 // ─── Store ─────────────────────────────────────────────────────────────────
 
+async function fetchAndSyncUserProfile(): Promise<void> {
+  try {
+    const profile = await apiRequest<{ firstName: string; email: string }>('/users/me');
+    useGiftStore.getState().setUserName(profile.firstName);
+  } catch {
+    // Non-bloquant — le profil sera chargé plus tard
+  }
+}
+
 export const useAuthStore = create<AuthState>((set) => ({
   userId: null,
   userRole: null,
+  userFirstName: null,
+  userEmail: null,
   isAuthenticated: false,
   isLoadingAuth: true,
 
@@ -53,6 +67,7 @@ export const useAuthStore = create<AuthState>((set) => ({
           isAuthenticated: true,
           isLoadingAuth: false,
         });
+        await fetchAndSyncUserProfile();
         return;
       }
 
@@ -81,6 +96,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         isAuthenticated: true,
         isLoadingAuth: false,
       });
+      await fetchAndSyncUserProfile();
     } catch {
       await tokenStorage.clearTokens();
       set({ isAuthenticated: false, isLoadingAuth: false });
@@ -95,6 +111,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       userRole: decoded.role,
       isAuthenticated: true,
     });
+    await fetchAndSyncUserProfile();
   },
 
   logout: async (refreshToken: string) => {
@@ -107,7 +124,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       // On efface les tokens locaux même si l'API échoue
     } finally {
       await tokenStorage.clearTokens();
-      set({ userId: null, userRole: null, isAuthenticated: false });
+      useGiftStore.getState().setUserName('');
+      set({ userId: null, userRole: null, userFirstName: null, userEmail: null, isAuthenticated: false });
     }
   },
 }));
