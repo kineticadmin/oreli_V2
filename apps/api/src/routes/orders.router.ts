@@ -6,6 +6,7 @@ import { requireAuth } from '../middleware/auth.middleware.js';
 import {
   createOrder,
   getOrderDetail,
+  listBuyerOrders,
 } from '../services/orders/orders.service.js';
 import {
   buildOrderChannelName,
@@ -40,6 +41,16 @@ const createOrderSchema = z.object({
 });
 
 // ─── Routes ────────────────────────────────────────────────────────────────
+
+/**
+ * GET /orders
+ * Liste les commandes de l'acheteur authentifié (50 dernières).
+ */
+ordersRouter.get('/', requireAuth, async (context) => {
+  const buyerUserId = context.get('authenticatedUserId');
+  const orders = await listBuyerOrders(buyerUserId);
+  return context.json(orders, 200);
+});
 
 /**
  * POST /orders

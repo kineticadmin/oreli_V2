@@ -247,6 +247,45 @@ export async function getOrderDetail(
   };
 }
 
+export interface BuyerOrderSummary {
+  id: string;
+  status: string;
+  currency: string;
+  totalAmount: number;
+  giftMessage: string | null;
+  firstItemTitle: string;
+  firstItemSellerName: string;
+  createdAt: Date;
+}
+
+export async function listBuyerOrders(buyerUserId: string): Promise<BuyerOrderSummary[]> {
+  const orders = await prisma.order.findMany({
+    where: { buyerUserId },
+    include: { items: { take: 1 } },
+    orderBy: { createdAt: 'desc' },
+    take: 50,
+  });
+
+  return orders.map((order) => {
+    const firstItem = order.items[0];
+    const snapshot = firstItem?.productSnapshot as {
+      title?: string;
+      sellerDisplayName?: string;
+    } | null;
+
+    return {
+      id: order.id,
+      status: order.status,
+      currency: order.currency,
+      totalAmount: order.totalAmount,
+      giftMessage: order.giftMessage ?? null,
+      firstItemTitle: snapshot?.title ?? 'Cadeau Oreli',
+      firstItemSellerName: snapshot?.sellerDisplayName ?? '',
+      createdAt: order.createdAt,
+    };
+  });
+}
+
 export async function listSellerOrders(
   sellerId: string,
   statusFilter?: string | undefined,

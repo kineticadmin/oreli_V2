@@ -5,53 +5,25 @@ import {
     StyleSheet,
     ScrollView,
     TouchableOpacity,
+    ActivityIndicator,
 } from 'react-native';
+import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius, Shadow } from '@/constants/Typography';
-import { products } from '@/data/mockData';
-
-const MOCK_ORDERS = [
-    {
-        id: 'ORE-28471',
-        productId: products[0]?.id,
-        productName: products[0]?.name ?? 'Cadeau Oreli',
-        date: '28 fév. 2026',
-        total: (products[0]?.price ?? 45) + 5,
-        status: 'Livré' as const,
-        recipient: 'Sophie',
-    },
-    {
-        id: 'ORE-19302',
-        productId: products[2]?.id,
-        productName: products[2]?.name ?? 'Cadeau Oreli',
-        date: '14 mars 2026',
-        total: products[2]?.price ?? 65,
-        status: 'En cours' as const,
-        recipient: 'Marc',
-    },
-    {
-        id: 'ORE-74819',
-        productId: products[5]?.id,
-        productName: products[5]?.name ?? 'Cadeau Oreli',
-        date: '3 mars 2026',
-        total: products[5]?.price ?? 80,
-        status: 'En préparation' as const,
-        recipient: 'Julie',
-    },
-];
-
-const STATUS_CONFIG = {
-    'Livré': { color: '#16A34A', bg: '#16A34A22' },
-    'En cours': { color: '#CA8A04', bg: '#CA8A0422' },
-    'En préparation': { color: '#7C3AED', bg: '#7C3AED22' },
-};
+import { useOrders, ORDER_STATUS_LABELS } from '@/hooks/useOrders';
+import { formatPrice } from '@/hooks/useCatalog';
 
 export default function OrdersScreen() {
     const Colors = useThemeColors();
     const styles = createStyles(Colors);
     const insets = useSafeAreaInsets();
+
+    const { data: orders, isLoading } = useOrders();
+
+    const formatOrderDate = (isoDate: string) =>
+        new Date(isoDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 
     return (
         <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -61,41 +33,56 @@ export default function OrdersScreen() {
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
-                {MOCK_ORDERS.length === 0 ? (
+                {isLoading && (
+                    <ActivityIndicator color={Colors.gold} style={{ marginTop: 60 }} />
+                )}
+                {!isLoading && (!orders || orders.length === 0) && (
                     <View style={styles.empty}>
-                        <Feather name="box" style={styles.emptyIcon} />
+                        <Feather name="box" size={40} color={Colors.warm} />
                         <Text style={styles.emptyTitle}>Aucune commande</Text>
                         <Text style={styles.emptySubtitle}>Tes commandes apparaîtront ici</Text>
                     </View>
-                ) : (
+                )}
+                {orders && orders.length > 0 && (
                     <View style={styles.list}>
-                        {MOCK_ORDERS.map((order) => {
-                            const config = STATUS_CONFIG[order.status];
+                        {orders.map((order) => {
+                            const statusConfig = ORDER_STATUS_LABELS[order.status] ?? {
+                                label: order.status,
+                                color: Colors.muted,
+                                bg: Colors.stone,
+                            };
                             return (
                                 <TouchableOpacity
                                     key={order.id}
                                     style={styles.card}
                                     activeOpacity={0.8}
+                                    onPress={() => router.push(`/order/${order.id}` as never)}
                                 >
                                     <View style={styles.cardTop}>
                                         <View style={styles.productIconWrap}>
-                                            <Feather name="gift" style={styles.productIcon} color={Colors.cream} />
+                                            <Feather name="gift" size={24} color={Colors.cream} />
                                         </View>
                                         <View style={styles.cardInfo}>
-                                            <Text style={styles.productName} numberOfLines={2}>{order.productName}</Text>
-                                            <Text style={styles.recipient}>Pour {order.recipient}</Text>
+                                            <Text style={styles.productName} numberOfLines={2}>
+                                                {order.firstItemTitle}
+                                            </Text>
+                                            <Text style={styles.sellerName} numberOfLines={1}>
+                                                {order.firstItemSellerName}
+                                            </Text>
                                         </View>
-                                        <View style={[styles.statusBadge, { backgroundColor: config.bg }]}>
-                                            <Text style={[styles.statusText, { color: config.color }]}>{order.status}</Text>
+                                        <View style={[styles.statusBadge, { backgroundColor: statusConfig.bg }]}>
+                                            <Text style={[styles.statusText, { color: statusConfig.color }]}>
+                                                {statusConfig.label}
+                                            </Text>
                                         </View>
                                     </View>
 
                                     <View style={styles.divider} />
 
                                     <View style={styles.cardBottom}>
-                                        <Text style={styles.orderId}>#{order.id}</Text>
-                                        <Text style={styles.date}>{order.date}</Text>
-                                        <Text style={styles.total}>{order.total}€</Text>
+                                        <Text style={styles.orderId}>#{order.id.slice(0, 8).toUpperCase()}</Text>
+                                        <Text style={styles.date}>{formatOrderDate(order.createdAt)}</Text>
+                                        <Text style={styles.total}>{formatPrice(order.totalAmount, order.currency)}</Text>
                                     </View>
                                 </TouchableOpacity>
                             );
@@ -123,7 +110,6 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
         paddingTop: 100,
         gap: 12,
     },
-    emptyIcon: { fontSize: 40, color: Colors.warm },
     emptyTitle: { fontSize: 18, fontFamily: Typography.bold, color: Colors.cream },
     emptySubtitle: { fontSize: Typography.sm, fontFamily: Typography.regular, color: Colors.muted },
     list: { padding: Spacing.xl, gap: Spacing.md },
@@ -147,7 +133,7 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
     productIcon: { fontSize: 24 },
     cardInfo: { flex: 1 },
     productName: { fontSize: Typography.sm, fontFamily: Typography.semibold, color: Colors.cream, lineHeight: 18, marginBottom: 3 },
-    recipient: { fontSize: Typography.xs, fontFamily: Typography.regular, color: Colors.muted },
+    sellerName: { fontSize: Typography.xs, fontFamily: Typography.regular, color: Colors.muted },
     statusBadge: {
         paddingHorizontal: 10,
         paddingVertical: 5,
