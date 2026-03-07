@@ -21,6 +21,7 @@
     "@oreli/shared-types": "workspace:*",
     "bcryptjs": "^2.4.3",
     "bullmq": "^5.13.0",
+    "dotenv": "^17.3.1",
     "hono": "^4.6.0",
     "ioredis": "^5.4.0",
     "jsonwebtoken": "^9.0.0",
