@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     View,
     Text,
@@ -9,601 +9,311 @@ import {
     KeyboardAvoidingView,
     Platform,
     LayoutAnimation,
+    ActivityIndicator,
 } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius, Shadow } from '@/constants/Typography';
-import {
-    occasions,
-    budgetOptions,
-    deliveryOptions,
-    surpriseOptions,
-} from '@/data/mockData';
 import { useGiftStore } from '@/store/giftStore';
-import { useRecommendation, type RecommendedProduct } from '@/hooks/useRecommendation';
-import { useRelationships } from '@/hooks/useRelationships';
 import { formatPrice } from '@/hooks/useCatalog';
+import { useGiftChat, type GiftChatMessage, type RecommendedProduct } from '@/hooks/useGiftChat';
 
-type MessageRole = 'oreli' | 'user' | 'choices' | 'summary' | 'products' | 'datePicker';
+// ─── Composants ────────────────────────────────────────────────────────────
 
-interface Choice {
-    id: string;
-    label: string;
-    sublabel?: string;
-    icon?: string;
-}
-
-interface ChatMessage {
-    id: string;
-    role: MessageRole;
-    text?: string;
-    choices?: Choice[];
-    field?: string;
-    layout?: 'horizontal' | 'grid';
-    summaryData?: {
-        budget: string;
-        delivery: string;
-        person?: string;
-    };
-    recommendedProducts?: RecommendedProduct[];
-}
-
-const PAGE_SIZE = 6;
-
-const GridProductList = ({ products, styles }: { products: RecommendedProduct[], styles: any }) => {
-    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-
-    const loadMore = () => {
-        if (visibleCount < products.length) {
-            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-            setVisibleCount(prev => prev + PAGE_SIZE);
-        }
-    };
-
+function TypingIndicator({ Colors }: { Colors: ThemeColors }) {
     return (
-        <View style={styles.gridContainer}>
-            {products.slice(0, visibleCount).map(prod => (
-                <TouchableOpacity
-                    key={prod.id}
-                    style={styles.productCardGrid}
-                    onPress={() => {
-                        useGiftStore.getState().updateGiftFlow({ selectedProductId: prod.id });
-                        router.push(`/product/${prod.id}` as never);
-                    }}
-                    activeOpacity={0.85}
-                >
-                    <View style={styles.productImageWrapGrid}>
-                        <Text style={styles.productImagePlaceholder}>📦</Text>
-                        <View style={styles.matchBadge}>
-                            <Text style={styles.matchBadgeText}>✦ {Math.round(prod.score * 100)}%</Text>
-                        </View>
-                    </View>
-                    <View style={styles.productInfo}>
-                        <Text style={styles.productName} numberOfLines={2}>{prod.title}</Text>
-                        <Text style={styles.productPrice}>{formatPrice(prod.priceAmount, prod.currency)}</Text>
-                    </View>
-                </TouchableOpacity>
-            ))}
-            {visibleCount < products.length && (
-                <TouchableOpacity style={styles.loadMoreBtn} onPress={loadMore}>
-                    <Text style={styles.loadMoreBtnText}>Voir plus de cadeaux</Text>
-                </TouchableOpacity>
-            )}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: Spacing.xl, paddingBottom: Spacing.md }}>
+            <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.gold, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 16 }}>✦</Text>
+            </View>
+            <View style={{ backgroundColor: Colors.charcoal, borderRadius: Radius.xl, borderWidth: 1, borderColor: Colors.warm, paddingHorizontal: 14, paddingVertical: 10, flexDirection: 'row', gap: 4 }}>
+                {[0, 1, 2].map((dotIndex) => (
+                    <View key={dotIndex} style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.muted }} />
+                ))}
+            </View>
         </View>
     );
-};
+}
 
-const occasionChoices: Choice[] = occasions.map((o) => ({
-    id: o.label,
-    label: o.label,
-    icon: o.iconName,
-}));
+function ProductCard({ product, Colors, styles }: { product: RecommendedProduct; Colors: ThemeColors; styles: ReturnType<typeof createStyles> }) {
+    return (
+        <TouchableOpacity
+            style={styles.productCard}
+            activeOpacity={0.85}
+            onPress={() => {
+                useGiftStore.getState().updateGiftFlow({ selectedProductId: product.id });
+                router.push(`/product/${product.id}` as never);
+            }}
+        >
+            <View style={styles.productImageBox}>
+                <Feather name="gift" size={28} color={Colors.cream} />
+                <View style={styles.scoreBadge}>
+                    <Text style={styles.scoreBadgeText}>✦ {Math.round(product.score * 100)}%</Text>
+                </View>
+            </View>
+            <View style={styles.productInfo}>
+                <Text style={styles.productTitle} numberOfLines={2}>{product.title}</Text>
+                {product.justification && (
+                    <Text style={styles.productJustification} numberOfLines={2}>"{product.justification}"</Text>
+                )}
+                <View style={styles.productMeta}>
+                    <Text style={styles.productPrice}>{formatPrice(product.priceAmount, product.currency)}</Text>
+                    <Text style={styles.productSeller}>{product.seller.displayName}</Text>
+                </View>
+            </View>
+        </TouchableOpacity>
+    );
+}
+
+// ─── Écran principal ───────────────────────────────────────────────────────
 
 export default function GiftFlowScreen() {
     const Colors = useThemeColors();
     const styles = createStyles(Colors);
     const insets = useSafeAreaInsets();
-    const { selectedPerson, setSelectedPerson, updateGiftFlow } = useGiftStore();
-    const recommend = useRecommendation();
-    const { data: relationships } = useRelationships();
+    const { selectedPerson } = useGiftStore();
+    const params = useLocalSearchParams<{
+        relationshipId?: string;
+        productId?: string;
+        occasion?: string;
+        suggestedDeliveryDate?: string;
+    }>();
 
-    const personChoices: Choice[] = (relationships ?? []).map((rel) => ({
-        id: rel.id,
-        label: rel.displayName,
-        sublabel: rel.relationshipType,
-        icon: 'user',
-    }));
+    const context = {
+        ...(params.relationshipId ? { relationshipId: params.relationshipId } : {}),
+        ...(selectedPerson?.apiId && !params.relationshipId ? { relationshipId: selectedPerson.apiId } : {}),
+        ...(params.productId ? { productId: params.productId } : {}),
+        ...(params.occasion ? { occasion: params.occasion } : {}),
+        ...(params.suggestedDeliveryDate ? { suggestedDeliveryDate: params.suggestedDeliveryDate } : {}),
+    };
 
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
-    const [isTyping, setIsTyping] = useState(false);
-    const [inputValue, setInputValue] = useState('');
-    const [currentField, setCurrentField] = useState('');
-    const [answeredIds, setAnsweredIds] = useState<Set<string>>(new Set());
-    const [flowData, setFlowData] = useState<Record<string, string>>({
-        personId: selectedPerson?.id || '',
-    });
+    const {
+        messages,
+        suggestions,
+        products,
+        isLoading,
+        isReady,
+        sendMessage,
+        initChat,
+    } = useGiftChat(context);
+
     const listRef = useRef<FlatList>(null);
-    const [step, setStep] = useState(selectedPerson ? 1 : 0);
-    const [selectedDate, setSelectedDate] = useState(new Date());
-
-    const getPersonName = (id: string) =>
-        relationships?.find((r) => r.id === id)?.displayName || '';
-
-    const addMessage = (msg: Omit<ChatMessage, 'id'>) => {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        setMessages((prev) => [...prev, { ...msg, id: `${Date.now()}-${Math.random()}` }]);
-        setTimeout(() => listRef.current?.scrollToOffset({ offset: 0, animated: true }), 100);
-    };
-
-    const simulateTyping = (callback: () => void, delay = 800) => {
-        setIsTyping(true);
-        setTimeout(() => {
-            setIsTyping(false);
-            callback();
-        }, delay);
-    };
-
-    const askStep = (stepIdx: number, personName?: string) => {
-        const name = personName || getPersonName(flowData.personId);
-        switch (stepIdx) {
-            case 0:
-                simulateTyping(() => {
-                    addMessage({ role: 'oreli', text: 'Bonjour ! À qui souhaites-tu offrir un cadeau ?' });
-                    setTimeout(() => addMessage({ role: 'choices', choices: [...personChoices, { id: 'new', label: "Quelqu'un d'autre", icon: '+' }], field: 'personId' }), 300);
-                    setCurrentField('personId');
-                });
-                break;
-            case 1:
-                simulateTyping(() => {
-                    addMessage({ role: 'oreli', text: `${name} a de la chance ! Quel budget as-tu ?` });
-                    setTimeout(() => addMessage({ role: 'choices', choices: budgetOptions.map(b => ({ id: b.id, label: b.label, sublabel: b.sublabel, icon: b.icon })), field: 'budget' }), 300);
-                    setCurrentField('budget');
-                });
-                break;
-            case 2:
-                simulateTyping(() => {
-                    addMessage({ role: 'oreli', text: "Parfait ! C'est pour quelle occasion ?" });
-                    setTimeout(() => addMessage({ role: 'choices', choices: occasionChoices, field: 'occasion' }), 300);
-                    setCurrentField('occasion');
-                });
-                break;
-            case 3:
-                simulateTyping(() => {
-                    addMessage({ role: 'oreli', text: "Pour quand veux-tu offrir ce cadeau ?" });
-                    const dateChoices = [
-                        { id: 'today', label: "Aujourd'hui", sublabel: 'Express', icon: 'zap' },
-                        { id: 'tomorrow', label: 'Demain', icon: 'sun' },
-                        { id: 'week', label: 'Cette semaine', icon: 'calendar' },
-                        { id: 'custom', label: 'Choisir une date', sublabel: 'Calendrier', icon: 'grid' }
-                    ];
-                    setTimeout(() => addMessage({ role: 'choices', choices: dateChoices, field: 'deliveryDate' }), 300);
-                    setCurrentField('deliveryDate');
-                });
-                break;
-            case 4:
-                simulateTyping(() => {
-                    addMessage({ role: 'oreli', text: 'Quel niveau de surprise souhaites-tu ?' });
-                    setTimeout(() => addMessage({ role: 'choices', choices: surpriseOptions.map(s => ({ id: s.id, label: s.label, sublabel: s.sublabel, icon: s.icon })), field: 'surpriseLevel' }), 300);
-                    setCurrentField('surpriseLevel');
-                });
-                break;
-        }
-    };
+    const [inputValue, setInputValue] = useState('');
 
     useEffect(() => {
-        if (selectedPerson) {
-            simulateTyping(() => {
-                addMessage({ role: 'oreli', text: `Tu veux offrir un cadeau à ${selectedPerson.name} ? Quelle belle idée ! Quel budget as-tu ?` });
-                setTimeout(() => {
-                    addMessage({ role: 'choices', choices: budgetOptions.map(b => ({ id: b.id, label: b.label, sublabel: b.sublabel, icon: b.icon })), field: 'budget' });
-                    setCurrentField('budget');
-                }, 300);
-            });
-        } else {
-            askStep(0);
-        }
+        initChat();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const handleChoice = (field: string, choiceId: string, choiceLabel: string, msgId: string) => {
-        if (answeredIds.has(msgId)) return;
-        setAnsweredIds((prev) => new Set([...prev, msgId]));
-        addMessage({ role: 'user', text: choiceLabel });
-
-        if (field === 'deliveryDate' && choiceId === 'custom') {
-            simulateTyping(() => {
-                addMessage({ role: 'datePicker', field: 'deliveryDate-manual' });
-            });
-            return;
+    useEffect(() => {
+        if (messages.length > 0) {
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+            setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
         }
+    }, [messages, isLoading]);
 
-        let finalValue = choiceId;
-        // Compute date if a predefined option is selected, or if coming from the manual datePicker
-        if (field === 'deliveryDate' || field === 'deliveryDate-manual') {
-            if (choiceId === 'today') {
-                finalValue = new Date().toISOString();
-            } else if (choiceId === 'tomorrow') {
-                const date = new Date();
-                date.setDate(date.getDate() + 1);
-                finalValue = date.toISOString();
-            } else if (choiceId === 'week') {
-                const date = new Date();
-                date.setDate(date.getDate() + 7);
-                finalValue = date.toISOString();
-            }
-        }
+    function handleSend(text: string) {
+        const trimmedText = text.trim();
+        if (!trimmedText || isLoading) return;
+        setInputValue('');
+        sendMessage(trimmedText);
+    }
 
-        const realField = field === 'deliveryDate-manual' ? 'deliveryDate' : field;
-        const newData = { ...flowData, [realField]: finalValue };
-        setFlowData(newData);
-
-        if (realField === 'personId') {
-            const name = getPersonName(choiceId);
-            const rel = relationships?.find((r) => r.id === choiceId);
-            if (rel) setSelectedPerson({
-                id: rel.id,
-                name: rel.displayName,
-                relationship: rel.relationshipType,
-                avatar: rel.displayName.charAt(0).toUpperCase(),
-                avatarUrl: null,
-                eventType: rel.upcomingEvents[0]?.eventType ?? null,
-                eventDate: rel.upcomingEvents[0]?.eventDate ?? null,
-                apiId: rel.id,
-                preferences: rel.preferences,
-            });
-            const nextStep = 1;
-            setStep(nextStep);
-            setTimeout(() => askStep(nextStep, name), 400);
-        } else if (realField === 'surpriseLevel') {
-            handleSurpriseOutcome(choiceId, newData);
-        } else {
-            // For other fields, advance to the next step
-            // NOTE: deliveryDate normal and manual both land here now
-            const nextStep = step + 1;
-            setStep(nextStep);
-            setTimeout(() => askStep(nextStep), 400);
-        }
-    };
-
-    const buildGiftIntent = (level: string, data: Record<string, string>) => {
-        const budgetEur = parseInt(data.budget || '80');
-        const budgetMaxCents = budgetEur === 100 ? 15_000 : budgetEur * 100;
-        const deliveryMs = data.deliveryDate ? new Date(data.deliveryDate).getTime() - Date.now() : Infinity;
-        const isLastMinute = deliveryMs < 36 * 60 * 60 * 1_000; // moins de 36h
-
-        return {
-            budgetMin: 0,
-            budgetMax: budgetMaxCents,
-            occasionType: data.occasion || undefined,
-            isSurpriseMode: level === 'total',
-            isLastMinute,
-            limit: level === 'guided' ? 3 : level === 'total' ? 1 : 8,
-        };
-    };
-
-    const handleSurpriseOutcome = (level: string, data: Record<string, string>) => {
-        const personName = getPersonName(data.personId);
-
-        if (level === 'total') {
-            simulateTyping(() => {
-                addMessage({ role: 'oreli', text: `Je m'occupe de tout pour ${personName} ! Une magnifique surprise sera livrée.` });
-                const formattedDate = new Date(data.deliveryDate).toLocaleDateString('fr-FR');
-                setTimeout(() => {
-                    addMessage({ role: 'summary', summaryData: { budget: `~${data.budget}€`, delivery: formattedDate, person: personName }, field: 'confirm_total' });
-                }, 400);
-            }, 1200);
-            return;
-        }
-
-        const introText = level === 'guided'
-            ? 'Voici mes 3 meilleures recommandations :'
-            : `Voici une sélection pour ${personName} :`;
-
-        simulateTyping(() => {
-            addMessage({ role: 'oreli', text: introText });
-        }, 1000);
-
-        recommend.mutate(buildGiftIntent(level, data), {
-            onSuccess: (result) => {
-                if (result.products.length === 0) {
-                    addMessage({ role: 'oreli', text: 'Je n\'ai pas trouvé de cadeaux correspondants pour l\'instant. Essaie d\'ajuster ton budget !' });
-                    return;
-                }
-                setTimeout(() => {
-                    addMessage({
-                        role: 'products',
-                        recommendedProducts: result.products,
-                        layout: level === 'guided' ? 'horizontal' : 'grid',
-                    });
-                }, 600);
-            },
-            onError: () => {
-                addMessage({ role: 'oreli', text: 'Désolé, je n\'arrive pas à charger les suggestions. Réessaie dans un instant.' });
-            },
-        });
-    };
-
-    const totalSteps = selectedPerson ? 4 : 5;
-    const progress = Math.min(step / totalSteps, 1);
-
-    const renderMessage = ({ item }: { item: ChatMessage }) => {
-        if (item.role === 'oreli') {
-            return (
-                <View style={styles.msgOreli}>
-                    <View style={styles.msgAvatar}><Text style={styles.msgAvatarText}>✦</Text></View>
-                    <View style={styles.msgBubble}>
-                        <Text style={styles.msgText}>{item.text}</Text>
+    function renderMessage({ item }: { item: GiftChatMessage }) {
+        const isOreliMessage = item.role === 'oreli';
+        return (
+            <View style={[styles.messageRow, isOreliMessage ? styles.messageRowOreli : styles.messageRowUser]}>
+                {isOreliMessage && (
+                    <View style={styles.oreliAvatar}>
+                        <Text style={styles.oreliAvatarText}>✦</Text>
                     </View>
+                )}
+                <View style={[styles.bubble, isOreliMessage ? styles.bubbleOreli : styles.bubbleUser]}>
+                    <Text style={[styles.bubbleText, isOreliMessage ? styles.bubbleTextOreli : styles.bubbleTextUser]}>
+                        {item.text}
+                    </Text>
                 </View>
-            );
-        }
-        if (item.role === 'user') {
+            </View>
+        );
+    }
+
+    type ListItem =
+        | { type: 'message'; data: GiftChatMessage; key: string }
+        | { type: 'suggestions'; key: string }
+        | { type: 'products'; key: string }
+        | { type: 'typing'; key: string };
+
+    const listData: ListItem[] = [
+        ...messages.map((message, index) => ({ type: 'message' as const, data: message, key: `msg-${index}` })),
+        ...(isLoading ? [{ type: 'typing' as const, key: 'typing' }] : []),
+        ...(suggestions.length > 0 && !isLoading ? [{ type: 'suggestions' as const, key: 'suggestions' }] : []),
+        ...(isReady && products ? [{ type: 'products' as const, key: 'products' }] : []),
+    ];
+
+    function renderItem({ item }: { item: ListItem }) {
+        if (item.type === 'message') return renderMessage({ item: item.data });
+        if (item.type === 'typing') return <TypingIndicator Colors={Colors} />;
+        if (item.type === 'suggestions') {
             return (
-                <View style={styles.msgUser}>
-                    <View style={styles.msgBubbleUser}>
-                        <Text style={styles.msgTextUser}>{item.text}</Text>
-                    </View>
-                </View>
-            );
-        }
-        if (item.role === 'choices' && item.choices) {
-            const isAnswered = answeredIds.has(item.id);
-            if (isAnswered) return null;
-            return (
-                <View style={[styles.choiceRow]}>
-                    {item.choices.map((choice) => (
+                <View style={styles.suggestions}>
+                    {suggestions.map((suggestion) => (
                         <TouchableOpacity
-                            key={choice.id}
-                            style={[styles.choiceBtn, isAnswered && styles.choiceBtnAnswered]}
-                            onPress={() => handleChoice(item.field || '', choice.id, choice.label, item.id)}
-                            activeOpacity={isAnswered ? 1 : 0.75}
+                            key={suggestion}
+                            style={styles.chip}
+                            onPress={() => handleSend(suggestion)}
+                            activeOpacity={0.75}
                         >
-                            {choice.icon && (
-                                <Feather
-                                    name={choice.icon as any}
-                                    size={20}
-                                    color={isAnswered ? Colors.obsidian : Colors.cream}
-                                    style={styles.choiceIcon}
-                                />
-                            )}
-                            <View>
-                                <Text style={[styles.choiceLabel, isAnswered && styles.choiceLabelAnswered]}>{choice.label}</Text>
-                                {choice.sublabel ? <Text style={styles.choiceSublabel}>{choice.sublabel}</Text> : null}
-                            </View>
+                            <Text style={styles.chipText}>{suggestion}</Text>
                         </TouchableOpacity>
                     ))}
                 </View>
             );
         }
-        if (item.role === 'summary' && item.summaryData) {
+        if (item.type === 'products' && products) {
             return (
-                <View style={styles.summaryCard}>
-                    <Text style={styles.summaryTitle}>
-                        <Feather name="gift" size={16} color={Colors.gold} /> Surprise Totale
-                    </Text>
-                    <Text style={styles.summaryMeta}>Budget : {item.summaryData.budget}  ·  Livraison : {item.summaryData.delivery}</Text>
-                    <TouchableOpacity
-                        style={styles.summaryBtn}
-                        onPress={() => {
-                            updateGiftFlow({ surpriseLevel: 'total' });
-                            router.push('/checkout');
-                        }}
-                    >
-                        <Text style={styles.summaryBtnText}>Aller au paiement  →</Text>
-                    </TouchableOpacity>
+                <View style={{ paddingHorizontal: Spacing.xl, gap: Spacing.md }}>
+                    {products.map((product) => (
+                        <ProductCard key={product.id} product={product} Colors={Colors} styles={styles} />
+                    ))}
                 </View>
-            );
-        }
-        if (item.role === 'datePicker') {
-            const isAnswered = answeredIds.has(item.id);
-            if (isAnswered) return null; // We already added the "user" message for the chosen date
-            return (
-                <View style={styles.datePickerCard}>
-                    <DateTimePicker
-                        value={selectedDate}
-                        mode="date"
-                        display="inline"
-                        themeVariant={Colors.obsidian === '#0C0A09' ? 'dark' : 'light'}
-                        accentColor={Colors.gold}
-                        onChange={(event, date) => setSelectedDate(date || selectedDate)}
-                    />
-                    <TouchableOpacity
-                        style={styles.summaryBtn}
-                        onPress={() => {
-                            const dateStr = selectedDate.toISOString();
-                            const displayStr = selectedDate.toLocaleDateString('fr-FR');
-                            handleChoice(item.field || 'deliveryDate', dateStr, displayStr, item.id);
-                        }}
-                    >
-                        <Text style={styles.summaryBtnText}>Valider la date</Text>
-                    </TouchableOpacity>
-                </View>
-            );
-        }
-        if (item.role === 'products' && item.recommendedProducts) {
-            const prods = item.recommendedProducts;
-            if (item.layout === 'grid') {
-                return <GridProductList products={prods} styles={styles} />;
-            }
-
-            return (
-                <FlatList
-                    data={prods}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    keyExtractor={(p) => p.id}
-                    contentContainerStyle={{ gap: 12, paddingLeft: 40, paddingRight: 16, paddingVertical: 4 }}
-                    renderItem={({ item: prod }) => (
-                        <TouchableOpacity
-                            style={styles.productCard}
-                            onPress={() => {
-                                useGiftStore.getState().updateGiftFlow({ selectedProductId: prod.id });
-                                router.push(`/product/${prod.id}` as never);
-                            }}
-                            activeOpacity={0.85}
-                        >
-                            <View style={styles.productImageWrap}>
-                                <Text style={styles.productImagePlaceholder}>📦</Text>
-                                <View style={styles.matchBadge}>
-                                    <Text style={styles.matchBadgeText}>✦ {Math.round(prod.score * 100)}%</Text>
-                                </View>
-                            </View>
-                            <View style={styles.productInfo}>
-                                <Text style={styles.productName} numberOfLines={2}>{prod.title}</Text>
-                                <Text style={styles.productJustification} numberOfLines={2}>{prod.seller.displayName}</Text>
-                                <Text style={styles.productPrice}>{formatPrice(prod.priceAmount, prod.currency)}</Text>
-                            </View>
-                        </TouchableOpacity>
-                    )}
-                />
             );
         }
         return null;
-    };
+    }
 
     return (
-        <View style={[styles.container, { backgroundColor: Colors.obsidian }]}>
-            {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn}>
-                    <Text style={styles.headerBtnText}>←</Text>
+        <View style={[styles.container, { paddingTop: insets.top }]}>
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+                    <Feather name="arrow-left" size={22} color={Colors.cream} />
                 </TouchableOpacity>
                 <View style={styles.headerCenter}>
-                    <View style={styles.headerAvatar}><Text style={styles.headerAvatarText}>✦</Text></View>
+                    <View style={styles.headerAvatar}>
+                        <Text style={styles.headerAvatarText}>✦</Text>
+                    </View>
                     <Text style={styles.headerTitle}>Oreli</Text>
                 </View>
-                <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn}>
-                    <Text style={styles.headerBtnText}>✕</Text>
-                </TouchableOpacity>
+                <View style={{ width: 38 }} />
             </View>
 
-            {/* Progress */}
-            <View style={styles.progressWrap}>
-                <View style={styles.progressTrack}>
-                    <View style={[styles.progressBar, { width: `${progress * 100}%` }]} />
-                </View>
-            </View>
-
-            {/* Messages */}
-            <FlatList
-                ref={listRef}
-                data={[...messages].reverse()}
-                inverted
-                renderItem={renderMessage}
-                keyExtractor={(m) => m.id}
-                contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12 }}
-                ListHeaderComponent={
-                    (isTyping || recommend.isPending) ? (
-                        <View style={styles.msgOreli}>
-                            <View style={styles.msgAvatar}><Text style={styles.msgAvatarText}>✦</Text></View>
-                            <View style={styles.typingBubble}>
-                                <Text style={styles.typingDots}>· · ·</Text>
-                            </View>
-                        </View>
-                    ) : null
-                }
-            />
-
-            {/* Text input */}
             <KeyboardAvoidingView
+                style={{ flex: 1 }}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={12}
+                keyboardVerticalOffset={0}
             >
-                <View style={[styles.inputWrap, { paddingBottom: insets.bottom + 8 }]}>
-                    <View style={styles.inputRow}>
-                        <TextInput
-                            value={inputValue}
-                            onChangeText={setInputValue}
-                            onSubmitEditing={() => {
-                                if (!inputValue.trim() || !currentField) return;
-                                handleChoice(currentField, inputValue.trim(), inputValue.trim(), `manual-${Date.now()}`);
-                                setInputValue('');
-                            }}
-                            placeholder="Écris un message..."
-                            placeholderTextColor={Colors.muted}
-                            style={styles.input}
-                            returnKeyType="send"
-                        />
-                        <TouchableOpacity
-                            style={styles.sendBtn}
-                            onPress={() => {
-                                if (!inputValue.trim() || !currentField) return;
-                                handleChoice(currentField, inputValue.trim(), inputValue.trim(), `manual-${Date.now()}`);
-                                setInputValue('');
-                            }}
-                        >
-                            <Text style={styles.sendBtnText}>↑</Text>
-                        </TouchableOpacity>
-                    </View>
+                <FlatList
+                    ref={listRef}
+                    data={listData}
+                    keyExtractor={(item) => item.key}
+                    renderItem={renderItem}
+                    contentContainerStyle={{ padding: Spacing.xl, paddingBottom: 120, gap: Spacing.sm }}
+                    showsVerticalScrollIndicator={false}
+                />
+
+                <View style={[styles.inputBar, { paddingBottom: insets.bottom + 12 }]}>
+                    <TextInput
+                        value={inputValue}
+                        onChangeText={setInputValue}
+                        onSubmitEditing={() => handleSend(inputValue)}
+                        placeholder="Réponds à Oreli…"
+                        placeholderTextColor={Colors.muted}
+                        style={styles.input}
+                        returnKeyType="send"
+                        editable={!isLoading}
+                        blurOnSubmit={false}
+                    />
+                    <TouchableOpacity
+                        onPress={() => handleSend(inputValue)}
+                        disabled={!inputValue.trim() || isLoading}
+                        style={[styles.sendBtn, (!inputValue.trim() || isLoading) && styles.sendBtnDisabled]}
+                        activeOpacity={0.8}
+                    >
+                        {isLoading
+                            ? <ActivityIndicator size="small" color={Colors.obsidian} />
+                            : <Feather name="send" size={18} color={Colors.obsidian} />
+                        }
+                    </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
         </View>
     );
 }
 
+// ─── Styles ────────────────────────────────────────────────────────────────
+
 const createStyles = (Colors: ThemeColors) => StyleSheet.create({
-    container: { flex: 1 },
+    container: { flex: 1, backgroundColor: Colors.obsidian },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: Spacing.lg,
-        paddingBottom: 12,
+        paddingHorizontal: Spacing.xl,
+        paddingVertical: Spacing.lg,
         borderBottomWidth: 1,
         borderBottomColor: Colors.warm,
     },
-    headerBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-    headerBtnText: { fontSize: 20, color: Colors.muted },
+    backBtn: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
     headerCenter: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    headerAvatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.gold, alignItems: 'center', justifyContent: 'center' },
-    headerAvatarText: { fontSize: 14, color: Colors.obsidian, fontFamily: Typography.bold },
-    headerTitle: { fontSize: Typography.base, fontFamily: Typography.bold, color: Colors.cream },
-    progressWrap: { paddingHorizontal: 16, paddingVertical: 8 },
-    progressTrack: { height: 2, backgroundColor: Colors.warm, borderRadius: 1 },
-    progressBar: { height: 2, backgroundColor: Colors.gold, borderRadius: 1 },
-    msgOreli: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 12 },
-    msgAvatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.gold, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 },
-    msgAvatarText: { fontSize: 12, color: Colors.obsidian, fontFamily: Typography.bold },
-    msgBubble: { backgroundColor: Colors.charcoal, borderRadius: Radius.lg, borderTopLeftRadius: 4, paddingHorizontal: 14, paddingVertical: 10, maxWidth: '80%', ...Shadow.card },
-    msgText: { fontSize: Typography.sm, fontFamily: Typography.regular, color: Colors.cream, lineHeight: 20 },
-    msgUser: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 12 },
-    msgBubbleUser: { backgroundColor: Colors.gold, borderRadius: Radius.lg, borderTopRightRadius: 4, paddingHorizontal: 14, paddingVertical: 10, maxWidth: '75%' },
-    msgTextUser: { fontSize: Typography.sm, fontFamily: Typography.semibold, color: Colors.obsidian },
-    typingBubble: { backgroundColor: Colors.charcoal, borderRadius: Radius.lg, borderTopLeftRadius: 4, paddingHorizontal: 14, paddingVertical: 10 },
-    typingDots: { fontSize: 18, color: Colors.muted, letterSpacing: 4 },
-    choiceRow: { marginLeft: 36, flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-    choiceBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: Colors.charcoal, borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.warm },
-    choiceBtnAnswered: { opacity: 0.38 },
-    choiceIcon: { fontSize: 16 },
-    choiceLabel: { fontSize: Typography.sm, fontFamily: Typography.medium, color: Colors.cream },
-    choiceLabelAnswered: { color: Colors.muted },
-    choiceSublabel: { fontSize: 10, fontFamily: Typography.regular, color: Colors.muted, marginTop: 1 },
-    summaryCard: { marginLeft: 36, backgroundColor: Colors.charcoal, borderRadius: Radius.xl, borderWidth: 1, borderColor: Colors.gold + '44', padding: 20, marginBottom: 12 },
-    summaryTitle: { fontSize: Typography.lg, fontFamily: Typography.bold, color: Colors.cream, textAlign: 'center', marginBottom: 6 },
-    summaryMeta: { fontSize: Typography.sm, fontFamily: Typography.regular, color: Colors.muted, textAlign: 'center', marginBottom: 16 },
-    summaryBtn: { backgroundColor: Colors.gold, paddingVertical: 14, borderRadius: Radius.full, alignItems: 'center', marginTop: 12 },
-    summaryBtnText: { fontSize: Typography.sm, fontFamily: Typography.semibold, color: Colors.obsidian },
-    datePickerCard: { alignSelf: 'center', backgroundColor: Colors.charcoal, borderRadius: Radius.xl, borderWidth: 1, borderColor: Colors.warm, padding: 8, marginBottom: 12, overflow: 'hidden' },
-    productCard: { width: 200, backgroundColor: Colors.charcoal, borderRadius: Radius.xl, overflow: 'hidden', flexShrink: 0, borderWidth: 1, borderColor: Colors.warm },
-    gridContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, paddingLeft: 36, paddingRight: 16, paddingTop: 4, paddingBottom: 16 },
-    productCardGrid: { width: '47%', backgroundColor: Colors.charcoal, borderRadius: Radius.xl, overflow: 'hidden', borderWidth: 1, borderColor: Colors.warm },
-    productImageWrapGrid: { height: 140, backgroundColor: Colors.stone, alignItems: 'center', justifyContent: 'center', position: 'relative' },
-    productImageWrap: { height: 220, backgroundColor: Colors.stone, alignItems: 'center', justifyContent: 'center', position: 'relative' },
-    productImagePlaceholder: { fontSize: 48 },
-    matchBadge: { position: 'absolute', top: 10, right: 10, backgroundColor: Colors.charcoal + 'dd', paddingHorizontal: 8, paddingVertical: 4, borderRadius: Radius.full, flexDirection: 'row', alignItems: 'center' },
-    matchBadgeText: { fontSize: 11, fontFamily: Typography.semibold, color: Colors.gold },
-    productInfo: { padding: 12 },
-    productName: { fontSize: Typography.sm, fontFamily: Typography.bold, color: Colors.cream, lineHeight: 18, marginBottom: 4 },
-    productJustification: { fontSize: 11, fontFamily: Typography.regular, color: Colors.muted, lineHeight: 16, marginBottom: 8 },
-    productPrice: { fontSize: Typography.md, fontFamily: Typography.bold, color: Colors.gold },
-    inputWrap: { paddingHorizontal: 16, paddingTop: 8, borderTopWidth: 1, borderTopColor: Colors.warm, backgroundColor: Colors.obsidian },
-    inputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    input: { flex: 1, backgroundColor: Colors.charcoal, borderRadius: Radius.full, paddingHorizontal: 16, paddingVertical: 12, fontSize: Typography.sm, fontFamily: Typography.regular, color: Colors.cream, borderWidth: 1, borderColor: Colors.warm },
-    sendBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.gold, alignItems: 'center', justifyContent: 'center' },
-    sendBtnText: { fontSize: 18, color: Colors.obsidian, fontFamily: Typography.bold },
-    loadMoreBtn: { width: '100%', paddingVertical: 14, alignItems: 'center', backgroundColor: Colors.charcoal, borderRadius: Radius.xl, borderWidth: 1, borderColor: Colors.warm, marginTop: 8 },
-    loadMoreBtnText: { color: Colors.gold, fontFamily: Typography.semibold, fontSize: Typography.sm },
+    headerAvatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.gold, alignItems: 'center', justifyContent: 'center' },
+    headerAvatarText: { fontSize: 14, color: Colors.obsidian },
+    headerTitle: { fontSize: Typography.base, fontFamily: Typography.semibold, color: Colors.cream },
+    messageRow: { flexDirection: 'row', marginBottom: 4, alignItems: 'flex-end', gap: 8 },
+    messageRowOreli: { justifyContent: 'flex-start' },
+    messageRowUser: { justifyContent: 'flex-end' },
+    oreliAvatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.gold, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+    oreliAvatarText: { fontSize: 12, color: Colors.obsidian },
+    bubble: { maxWidth: '78%', paddingHorizontal: 14, paddingVertical: 10, borderRadius: Radius.xl },
+    bubbleOreli: { backgroundColor: Colors.charcoal, borderWidth: 1, borderColor: Colors.warm, borderBottomLeftRadius: 4 },
+    bubbleUser: { backgroundColor: Colors.gold, borderBottomRightRadius: 4 },
+    bubbleText: { fontSize: Typography.sm, lineHeight: Typography.sm * 1.5 },
+    bubbleTextOreli: { color: Colors.cream, fontFamily: Typography.regular },
+    bubbleTextUser: { color: Colors.obsidian, fontFamily: Typography.medium },
+    suggestions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingLeft: 36, marginTop: 4, marginBottom: 8 },
+    chip: { backgroundColor: Colors.stone, borderRadius: Radius.full, borderWidth: 1, borderColor: Colors.warm, paddingHorizontal: 14, paddingVertical: 8 },
+    chipText: { fontSize: Typography.sm, fontFamily: Typography.medium, color: Colors.cream },
+    productCard: {
+        backgroundColor: Colors.charcoal,
+        borderRadius: Radius.xl,
+        borderWidth: 1,
+        borderColor: Colors.warm,
+        padding: Spacing.md,
+        flexDirection: 'row',
+        gap: Spacing.md,
+        ...Shadow.card,
+    },
+    productImageBox: { width: 72, height: 72, borderRadius: Radius.lg, backgroundColor: Colors.stone, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+    scoreBadge: { position: 'absolute', bottom: -8, left: '50%', transform: [{ translateX: -20 }], backgroundColor: Colors.gold, borderRadius: Radius.full, paddingHorizontal: 6, paddingVertical: 2 },
+    scoreBadgeText: { fontSize: 9, fontFamily: Typography.bold, color: Colors.obsidian },
+    productInfo: { flex: 1, gap: 4 },
+    productTitle: { fontSize: Typography.sm, fontFamily: Typography.semibold, color: Colors.cream },
+    productJustification: { fontSize: Typography.xs, fontFamily: Typography.regular, color: Colors.muted, fontStyle: 'italic' },
+    productMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
+    productPrice: { fontSize: Typography.sm, fontFamily: Typography.bold, color: Colors.gold },
+    productSeller: { fontSize: Typography.xs, fontFamily: Typography.regular, color: Colors.muted },
+    inputBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        paddingHorizontal: Spacing.xl,
+        paddingTop: 12,
+        backgroundColor: Colors.obsidian,
+        borderTopWidth: 1,
+        borderTopColor: Colors.warm,
+    },
+    input: {
+        flex: 1,
+        backgroundColor: Colors.charcoal,
+        borderRadius: Radius.full,
+        borderWidth: 1,
+        borderColor: Colors.warm,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        fontSize: Typography.sm,
+        fontFamily: Typography.regular,
+        color: Colors.cream,
+    },
+    sendBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.gold, alignItems: 'center', justifyContent: 'center' },
+    sendBtnDisabled: { opacity: 0.4 },
 });
