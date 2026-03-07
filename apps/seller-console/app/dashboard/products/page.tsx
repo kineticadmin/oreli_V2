@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useProducts, useArchiveProduct, formatProductStatus, formatPrice } from '@/hooks/use-products';
+import { useProducts, useArchiveProduct, useSetStock, formatProductStatus, formatPrice } from '@/hooks/use-products';
 
 const STATUS_FILTERS = [
   { value: undefined, label: 'Tous' },
@@ -11,6 +11,45 @@ const STATUS_FILTERS = [
   { value: 'pending_review', label: 'En révision' },
   { value: 'paused', label: 'Pausés' },
 ] as const;
+
+function StockCell({ productId, currentStock }: { productId: string; currentStock: number }) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(String(currentStock));
+  const setStock = useSetStock(productId);
+
+  function handleBlur() {
+    const parsed = parseInt(value);
+    if (!isNaN(parsed) && parsed !== currentStock) {
+      setStock.mutate(parsed);
+    }
+    setEditing(false);
+  }
+
+  if (editing) {
+    return (
+      <input
+        type="number"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={handleBlur}
+        onKeyDown={(e) => { if (e.key === 'Enter') handleBlur(); if (e.key === 'Escape') { setValue(String(currentStock)); setEditing(false); } }}
+        min="0"
+        autoFocus
+        className="w-16 bg-stone border border-gold rounded px-2 py-1 text-cream text-sm focus:outline-none"
+      />
+    );
+  }
+
+  return (
+    <button
+      onClick={() => { setValue(String(currentStock)); setEditing(true); }}
+      className={`text-sm hover:text-gold transition-colors ${currentStock === 0 ? 'text-danger' : 'text-cream'}`}
+      title="Cliquer pour modifier"
+    >
+      {setStock.isPending ? '…' : currentStock}
+    </button>
+  );
+}
 
 export default function ProductsPage() {
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
@@ -113,7 +152,7 @@ export default function ProductsPage() {
                     <td className="px-5 py-4">
                       <span className={`text-sm ${color}`}>{label}</span>
                     </td>
-                    <td className="px-5 py-4 text-cream text-sm">{product.stockQuantity}</td>
+                    <td className="px-5 py-4"><StockCell productId={product.id} currentStock={product.stockQuantity} /></td>
                     <td className="px-5 py-4 text-right">
                       <Link
                         href={`/dashboard/products/${product.id}`}

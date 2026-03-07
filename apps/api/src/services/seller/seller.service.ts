@@ -262,6 +262,24 @@ export async function updateSellerProduct(
   return toSellerProductSummary(updatedProduct);
 }
 
+export async function setProductStock(
+  sellerId: string,
+  productId: string,
+  stockQuantity: number,
+): Promise<{ stockQuantity: number }> {
+  const existingProduct = await prisma.product.findUnique({ where: { id: productId } });
+
+  if (!existingProduct) throw new NotFoundError('Produit');
+  if (existingProduct.sellerId !== sellerId) throw new ForbiddenError('Ce produit n\'appartient pas à cette boutique');
+
+  const updatedInventory = await prisma.inventory.update({
+    where: { productId },
+    data: { stockQuantity },
+  });
+
+  return { stockQuantity: updatedInventory.stockQuantity };
+}
+
 export async function archiveSellerProduct(
   sellerId: string,
   productId: string,

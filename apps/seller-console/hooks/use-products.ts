@@ -87,6 +87,24 @@ export function useUpdateProduct(productId: string) {
   });
 }
 
+export function useSetStock(productId: string) {
+  const { session } = useSellerContext();
+  const queryClient = useQueryClient();
+  const sellerId = session?.sellerId;
+
+  return useMutation({
+    mutationFn: (stockQuantity: number) =>
+      apiRequest<{ stockQuantity: number }>(`/sellers/${sellerId}/products/${productId}/stock`, {
+        method: 'PATCH',
+        body: JSON.stringify({ stockQuantity }),
+        token: session?.accessToken,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['seller-products', sellerId] });
+    },
+  });
+}
+
 export function useArchiveProduct() {
   const { session } = useSellerContext();
   const queryClient = useQueryClient();

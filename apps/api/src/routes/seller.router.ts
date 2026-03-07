@@ -10,6 +10,7 @@ import {
   createSellerProduct,
   updateSellerProduct,
   archiveSellerProduct,
+  setProductStock,
 } from '../services/seller/seller.service.js';
 import { enqueueProductEmbeddingJob } from '../jobs/product-embedding.job.js';
 import {
@@ -150,6 +151,23 @@ sellerRouter.patch(
       await enqueueProductEmbeddingJob(product.id, product.title, product.description);
     }
     return context.json(product, 200);
+  },
+);
+
+/**
+ * PATCH /sellers/:sellerId/products/:productId/stock
+ * Met à jour le stock disponible d'un produit.
+ */
+sellerRouter.patch(
+  '/:sellerId/products/:productId/stock',
+  requireAuth,
+  requireSellerOwnership,
+  zValidator('json', z.object({ stockQuantity: z.number().int().min(0).max(100_000) })),
+  async (context) => {
+    const { sellerId, productId } = context.req.param();
+    const { stockQuantity } = context.req.valid('json');
+    const result = await setProductStock(sellerId, productId, stockQuantity);
+    return context.json(result, 200);
   },
 );
 
