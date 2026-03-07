@@ -5,10 +5,29 @@ import {
   recommendProducts,
   getCuratedHomeProducts,
 } from '../services/gift/recommendation.service.js';
+import {
+  processGiftChat,
+  type ConversationMessage,
+} from '../services/gift/chat.service.js';
 
 export const giftRouter = new Hono();
 
 // ─── Schémas de validation ─────────────────────────────────────────────────
+
+const conversationMessageSchema = z.object({
+  role: z.enum(['user', 'oreli']),
+  text: z.string().min(1).max(2000),
+});
+
+const giftChatSchema = z.object({
+  messages: z.array(conversationMessageSchema).max(20),
+  context: z.object({
+    relationshipId: z.string().uuid().optional(),
+    productId: z.string().uuid().optional(),
+    occasion: z.string().max(50).optional(),
+    suggestedDeliveryDate: z.string().optional(),
+  }).optional(),
+});
 
 const giftIntentSchema = z.object({
   // Budget en centimes EUR (ex: 5000 = 50.00 EUR)
@@ -34,6 +53,38 @@ giftRouter.post(
   async (context) => {
     const intent = context.req.valid('json');
     const result = await recommendProducts(intent);
+    return context.json(result, 200);
+  },
+);
+
+/**
+ * POST /gift/chat
+ * Conversation Gemini pilotée : collecte l'intent en 3-4 échanges max,
+ * retourne les recommandations quand ready: true.
+ * Auth optionnelle — guests peuvent utiliser (sans historique proches).
+ */
+giftRouter.post(
+  '/chat',
+  zValidator('json', giftChatSchema),
+  async (context) => {
+    const { messages, context: chatContext } = context.req.valid('json');
+
+    // userId optionnel — si non authentifié, les proches ne sont pas chargés
+    const userId = context.get('authenticatedUserId') as string | undefined;
+
+    // Build context without explicit `undefined` values to satisfy exactOptionalPropertyTypes
+    const resolvedChatContext: Record<string, string> = {};
+    if (chatContext?.relationshipId) resolvedChatContext['relationshipId'] = chatContext.relationshipId;
+    if (chatContext?.productId) resolvedChatContext['productId'] = chatContext.productId;
+    if (chatContext?.occasion) resolvedChatContext['occasion'] = chatContext.occasion;
+    if (chatContext?.suggestedDeliveryDate) resolvedChatContext['suggestedDeliveryDate'] = chatContext.suggestedDeliveryDate;
+
+    const result = await processGiftChat({
+      messages: messages as ConversationMessage[],
+      context: resolvedChatContext,
+      userId: userId ?? '',
+    });
+
     return context.json(result, 200);
   },
 );
