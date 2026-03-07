@@ -43,12 +43,16 @@ interface GiftStore {
     // Flow data
     giftFlow: Partial<GiftFlowData>;
 
+    // Last placed order (set after successful checkout)
+    lastOrderId: string | null;
+
     // Actions
     setTheme: (theme: 'dark' | 'light' | 'system') => void;
     setUserName: (name: string) => void;
     setUserAddress: (address: UserAddress) => void;
     setSelectedPerson: (p: PersonViewModel | null) => void;
     updateGiftFlow: (data: Partial<GiftFlowData>) => void;
+    setLastOrderId: (orderId: string) => void;
     resetGiftFlow: () => void;
 }
 
@@ -61,6 +65,7 @@ export const useGiftStore = create<GiftStore>((set) => ({
         giftMessage: 'Joyeux anniversaire ! Avec tout mon amour 💝',
         premiumWrap: false,
     },
+    lastOrderId: null,
 
     setTheme: (theme) => set({ theme }),
     setUserName: (name) => set({ userName: name }),
@@ -68,9 +73,11 @@ export const useGiftStore = create<GiftStore>((set) => ({
     setSelectedPerson: (p) => set({ selectedPerson: p }),
     updateGiftFlow: (data) =>
         set((state) => ({ giftFlow: { ...state.giftFlow, ...data } })),
+    setLastOrderId: (orderId) => set({ lastOrderId: orderId }),
     resetGiftFlow: () =>
         set({
             selectedPerson: null,
+            lastOrderId: null,
             giftFlow: {
                 giftMessage: 'Joyeux anniversaire ! Avec tout mon amour 💝',
                 premiumWrap: false,

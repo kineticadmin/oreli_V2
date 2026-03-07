@@ -12,10 +12,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius, Shadow } from '@/constants/Typography';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/api';
 import { formatPrice } from '@/hooks/useCatalog';
 import { ORDER_STATUS_LABELS } from '@/hooks/useOrders';
+import { useOrderTracking } from '@/hooks/useOrderTracking';
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -102,6 +103,7 @@ export default function OrderDetailScreen() {
     const Colors = useThemeColors();
     const styles = createStyles(Colors);
     const insets = useSafeAreaInsets();
+    const queryClient = useQueryClient();
 
     const { data: order, isLoading, error } = useQuery({
         queryKey: ['order', id],
@@ -109,6 +111,14 @@ export default function OrderDetailScreen() {
         enabled: !!id,
         staleTime: 30 * 1000,
     });
+
+    // Subscribe to real-time status updates; refetch the order when a new event arrives
+    const { latestEvent } = useOrderTracking(id);
+    React.useEffect(() => {
+        if (latestEvent) {
+            queryClient.invalidateQueries({ queryKey: ['order', id] });
+        }
+    }, [latestEvent, id, queryClient]);
 
     const formatDate = (iso: string) =>
         new Date(iso).toLocaleDateString('fr-FR', {

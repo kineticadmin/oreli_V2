@@ -26,7 +26,7 @@ export default function CheckoutScreen() {
     const Colors = useThemeColors();
     const styles = createStyles(Colors);
     const insets = useSafeAreaInsets();
-    const { giftFlow, updateGiftFlow, userAddress } = useGiftStore();
+    const { giftFlow, updateGiftFlow, userAddress, setLastOrderId } = useGiftStore();
     const [editingMsg, setEditingMsg] = useState(false);
 
     const { initPaymentSheet, presentPaymentSheet } = useStripe();
@@ -59,7 +59,8 @@ export default function CheckoutScreen() {
                 surpriseMode: toSurpriseMode(giftFlow.surpriseLevel),
             },
             {
-                onSuccess: async ({ stripeClientSecret }) => {
+                onSuccess: async ({ orderId, stripeClientSecret }) => {
+                    setLastOrderId(orderId);
                     const { error: initError } = await initPaymentSheet({
                         paymentIntentClientSecret: stripeClientSecret,
                         merchantDisplayName: 'Oreli',

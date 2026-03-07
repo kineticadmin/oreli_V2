@@ -6,6 +6,7 @@ import {
   onboardSeller,
   getSellerProfile,
   getMySellerProfile,
+  updateSellerProfile,
   listSellerProducts,
   createSellerProduct,
   updateSellerProduct,
@@ -43,6 +44,15 @@ const createProductSchema = z.object({
 });
 
 const updateProductSchema = createProductSchema.partial();
+
+const updateSellerProfileSchema = z.object({
+  displayName: z.string().min(2).max(100).optional(),
+  legalName: z.string().max(200).optional(),
+  vatNumber: z.string().max(50).optional(),
+  slaPrepHours: z.number().int().min(0).max(168).optional(),
+  slaDeliveryHours: z.number().int().min(0).max(168).optional(),
+  cutoffTimeLocal: z.string().regex(/^\d{2}:\d{2}$/).optional(), // HH:MM
+});
 
 const sellerProductsQuerySchema = z.object({
   cursor: z.string().optional(),
@@ -91,6 +101,23 @@ sellerRouter.post(
     const input = context.req.valid('json');
     const profile = await onboardSeller(userId, input);
     return context.json(profile, 201);
+  },
+);
+
+/**
+ * PATCH /sellers/:sellerId
+ * Mise à jour du profil vendeur (displayName, legalName, VAT, politique SLA).
+ */
+sellerRouter.patch(
+  '/:sellerId',
+  requireAuth,
+  requireSellerOwnership,
+  zValidator('json', updateSellerProfileSchema),
+  async (context) => {
+    const { sellerId } = context.req.param();
+    const input = context.req.valid('json');
+    const profile = await updateSellerProfile(sellerId, input);
+    return context.json(profile, 200);
   },
 );
 

@@ -14,7 +14,7 @@ export default function ConfirmationScreen() {
   const Colors = useThemeColors();
   const styles = createStyles(Colors);
     const insets = useSafeAreaInsets();
-    const { selectedPerson, giftFlow, resetGiftFlow } = useGiftStore();
+    const { selectedPerson, giftFlow, lastOrderId, resetGiftFlow } = useGiftStore();
     const { data: product } = useProductDetail(giftFlow.selectedProductId ?? '');
     const person = selectedPerson;
     const totalPriceCents = (product?.priceAmount ?? 0) + (giftFlow.premiumWrap ? PREMIUM_WRAP_PRICE_CENTS : 0);
@@ -35,8 +35,13 @@ export default function ConfirmationScreen() {
     };
 
     const handleTrack = () => {
+        const orderId = lastOrderId;
         resetGiftFlow();
-        router.replace('/(tabs)/orders');
+        if (orderId) {
+            router.replace(`/order/${orderId}` as never);
+        } else {
+            router.replace('/(tabs)/orders');
+        }
     };
 
     return (
@@ -80,7 +85,9 @@ export default function ConfirmationScreen() {
                         <View style={styles.divider} />
                         <View style={styles.orderRow}>
                             <Text style={styles.orderLabel}>N° de commande</Text>
-                            <Text style={styles.orderValue}>#ORE-{Math.floor(10000 + Math.random() * 90000)}</Text>
+                            <Text style={styles.orderValue}>
+                                {lastOrderId ? `#${lastOrderId.slice(0, 8).toUpperCase()}` : '—'}
+                            </Text>
                         </View>
                     </View>
                 )}

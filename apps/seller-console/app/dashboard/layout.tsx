@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: '/dashboard', label: 'Vue d\'ensemble', icon: '▤' },
   { href: '/dashboard/orders', label: 'Commandes', icon: '◫' },
   { href: '/dashboard/products', label: 'Produits', icon: '◻' },
+  { href: '/dashboard/settings', label: 'Paramètres', icon: '⚙' },
 ] as const;
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {

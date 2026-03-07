@@ -44,6 +44,15 @@ export interface CreateProductInput {
 
 // Tous les champs sont optionnels pour le PATCH.
 // Les champs sont explicitement `| undefined` pour satisfaire exactOptionalPropertyTypes.
+export interface UpdateSellerProfileInput {
+  displayName?: string | undefined;
+  legalName?: string | undefined;
+  vatNumber?: string | undefined;
+  slaPrepHours?: number | undefined;
+  slaDeliveryHours?: number | undefined;
+  cutoffTimeLocal?: string | undefined;
+}
+
 export interface UpdateProductInput {
   title?: string | undefined;
   description?: string | undefined;
@@ -135,6 +144,43 @@ export async function getSellerProfile(sellerId: string): Promise<SellerProfile>
   }
 
   return toSellerProfile(seller);
+}
+
+export async function updateSellerProfile(
+  sellerId: string,
+  input: UpdateSellerProfileInput,
+): Promise<SellerProfile> {
+  const hasPolicyFields = input.slaPrepHours !== undefined
+    || input.slaDeliveryHours !== undefined
+    || input.cutoffTimeLocal !== undefined;
+
+  const updatedSeller = await prisma.seller.update({
+    where: { id: sellerId },
+    data: {
+      ...(input.displayName !== undefined && { displayName: input.displayName }),
+      ...(input.legalName !== undefined && { legalName: input.legalName }),
+      ...(input.vatNumber !== undefined && { vatNumber: input.vatNumber }),
+      ...(hasPolicyFields && {
+        policy: {
+          upsert: {
+            create: {
+              ...(input.slaPrepHours !== undefined && { slaPrepHours: input.slaPrepHours }),
+              ...(input.slaDeliveryHours !== undefined && { slaDeliveryHours: input.slaDeliveryHours }),
+              ...(input.cutoffTimeLocal !== undefined && { cutoffTimeLocal: input.cutoffTimeLocal }),
+            },
+            update: {
+              ...(input.slaPrepHours !== undefined && { slaPrepHours: input.slaPrepHours }),
+              ...(input.slaDeliveryHours !== undefined && { slaDeliveryHours: input.slaDeliveryHours }),
+              ...(input.cutoffTimeLocal !== undefined && { cutoffTimeLocal: input.cutoffTimeLocal }),
+            },
+          },
+        },
+      }),
+    },
+    include: { policy: true },
+  });
+
+  return toSellerProfile(updatedSeller);
 }
 
 export async function listSellerProducts(
