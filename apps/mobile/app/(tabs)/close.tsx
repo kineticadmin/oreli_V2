@@ -74,7 +74,7 @@ export default function CloseScreen() {
                             activeOpacity={0.8}
                             onPress={() => {
                                 setSelectedPerson(person);
-                                router.push('/gift-flow');
+                                router.push(`/gift-flow?relationshipId=${person.id}` as never);
                             }}
                         >
                             <View style={styles.avatarWrapper}>
@@ -107,7 +107,7 @@ export default function CloseScreen() {
                                 activeOpacity={0.85}
                                 onPress={() => {
                                     setSelectedPerson(person);
-                                    router.push('/gift-flow');
+                                    router.push(`/gift-flow?relationshipId=${person.id}` as never);
                                 }}
                             >
                                 <Text style={styles.giftBtnText}>Offrir</Text>

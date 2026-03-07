@@ -33,10 +33,10 @@ export default function ProductDetailScreen() {
 
     const { data: product, isLoading } = useProductDetail(id ?? '');
 
-    const handleBuy = () => {
+    const handleGiftFlow = () => {
         if (!product) return;
         updateGiftFlow({ premiumWrap, selectedProductId: product.id });
-        router.push('/checkout');
+        router.push(`/gift-flow?productId=${product.id}` as never);
     };
 
     if (isLoading || !product) {
@@ -171,7 +171,7 @@ export default function ProductDetailScreen() {
                     <Text style={styles.priceLabel}>Total</Text>
                     <Text style={styles.priceValue}>{formatPrice(totalPriceCents, product.currency)}</Text>
                 </View>
-                <TouchableOpacity style={styles.buyBtn} onPress={handleBuy} activeOpacity={0.85}>
+                <TouchableOpacity style={styles.buyBtn} onPress={handleGiftFlow} activeOpacity={0.85}>
                     <Text style={styles.buyBtnText}>Offrir ce cadeau  →</Text>
                 </TouchableOpacity>
             </View>
