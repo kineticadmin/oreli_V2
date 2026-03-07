@@ -11,6 +11,7 @@
     "test": "turbo run test",
     "mobile": "pnpm --filter @oreli/mobile start",
     "api": "pnpm --filter @oreli/api dev",
+    "web": "pnpm --filter @oreli/web dev",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\" --ignore-path .gitignore"
   },
   "devDependencies": {
