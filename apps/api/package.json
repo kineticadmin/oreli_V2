@@ -9,7 +9,9 @@
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "seed": "tsx src/seed.ts",
+    "seed:clean": "tsx src/seed.ts --clean"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
