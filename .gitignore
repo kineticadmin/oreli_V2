@@ -28,8 +28,8 @@ android/
 
 # Expo config
 expo-env.d.ts
-# Prisma client généré (regénéré via `pnpm prisma generate`)
-packages/prisma/generated/
+# Prisma client généré — COMMITÉ intentionnellement pour Vercel (binaryTargets darwin + rhel)
+# Ne pas ajouter generated/ au gitignore
 
 # Turbo cache
 .turbo/
