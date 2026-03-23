@@ -10,7 +10,7 @@ import {
 
 // Lire la clé à l'appel (pas au chargement du module) pour que les tests
 // puissent la surcharger via process.env avant chaque cas de test.
-const GEMINI_MODEL = 'gemini-1.5-flash';
+const GEMINI_MODEL = 'gemini-2.5-flash';
 const MAX_TURNS_BEFORE_RECOMMEND = 4;
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -54,7 +54,7 @@ const GeminiResponseSchema = z.object({
   message: z.string().min(1),
   suggestions: z.array(z.string()).max(5).default([]),
   intent: z.object({
-    relationshipId: z.string().uuid().nullable().optional(),
+    relationshipId: z.string().nullable().optional(),
     budgetMin: z.number().int().nullable().optional(),
     budgetMax: z.number().int().nullable().optional(),
     occasion: z.string().nullable().optional(),
@@ -81,11 +81,14 @@ export async function processGiftChat(input: GiftChatInput): Promise<GiftChatOut
   const { messages, context = {}, userId } = input;
 
   // Charger les proches de l'utilisateur avec leurs préférences
-  const relationships = await prisma.relationship.findMany({
-    where: { userId },
-    include: { events: { orderBy: { eventDate: 'asc' }, take: 3 } },
-    orderBy: { affinityScore: 'desc' },
-  });
+  // userId vide = guest non authentifié → pas de proches à charger
+  const relationships = userId
+    ? await prisma.relationship.findMany({
+        where: { userId },
+        include: { events: { orderBy: { eventDate: 'asc' }, take: 3 } },
+        orderBy: { affinityScore: 'desc' },
+      })
+    : [];
 
   const prompt = buildPrompt(messages, context, relationships);
   const geminiResponse = await callGemini(prompt);
