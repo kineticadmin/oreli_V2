@@ -8,6 +8,7 @@
     ".": "./generated/client"
   },
   "scripts": {
+    "postinstall": "prisma generate",
     "generate": "prisma generate",
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
