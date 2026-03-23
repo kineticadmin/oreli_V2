@@ -12,6 +12,7 @@ import { webhooksRouter } from './routes/webhooks.router.js';
 import { usersRouter } from './routes/users.router.js';
 import { relationshipsRouter } from './routes/relationships.router.js';
 import { adminRouter } from './routes/admin.router.js';
+import { cronRouter } from './routes/cron.router.js';
 
 const ALLOWED_ORIGINS = (process.env['ALLOWED_ORIGINS'] ?? '')
   .split(',')
@@ -45,6 +46,7 @@ export function buildApp(): Hono {
   app.route('/users', usersRouter);
   app.route('/relationships', relationshipsRouter);
   app.route('/admin', adminRouter);
+  app.route('/cron', cronRouter);
 
   // ─── Gestion d'erreurs globale ─────────────────────────────────────────
 
