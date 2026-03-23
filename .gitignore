@@ -48,3 +48,6 @@ pnpm-debug.log
 
 # Next.js build output
 .next/
+
+# Claude Code agent memory (local only)
+.claude/
