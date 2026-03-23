@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, withDelay } from 'react-native-reanimated';
 import {
     View,
     Text,

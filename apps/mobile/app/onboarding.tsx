@@ -11,8 +11,11 @@ import {
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as SecureStore from 'expo-secure-store';
 import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius } from '@/constants/Typography';
+
+const ONBOARDING_DONE_KEY = 'oreli_onboarding_done';
 
 const { width: W, height: H } = Dimensions.get('window');
 
@@ -46,9 +49,10 @@ export default function OnboardingScreen() {
 
     const isLast = currentIdx === SLIDES.length - 1;
 
-    const goNext = () => {
+    const goNext = async () => {
         if (isLast) {
-            router.replace('/(tabs)');
+            await SecureStore.setItemAsync(ONBOARDING_DONE_KEY, 'true');
+            router.replace('/(auth)/login');
         } else {
             const next = currentIdx + 1;
             listRef.current?.scrollToIndex({ index: next, animated: true });
@@ -67,7 +71,10 @@ export default function OnboardingScreen() {
                 <View style={[styles.logoWrap, { paddingTop: insets.top + 8 }]}>
                     <Text style={styles.logo}>Oreli</Text>
                     {!isLast && (
-                        <TouchableOpacity onPress={() => router.replace('/(tabs)')}>
+                        <TouchableOpacity onPress={async () => {
+                            await SecureStore.setItemAsync(ONBOARDING_DONE_KEY, 'true');
+                            router.replace('/(auth)/login');
+                        }}>
                             <Text style={styles.skip}>Passer</Text>
                         </TouchableOpacity>
                     )}
