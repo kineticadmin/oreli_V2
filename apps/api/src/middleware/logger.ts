@@ -7,7 +7,7 @@ export const requestLogger = createMiddleware(async (context, next) => {
   await next();
 
   const durationMs = Date.now() - startTime;
-  const statusCode = context.res.status;
+  const statusCode = (context.res as { status?: number }).status ?? 200;
 
   console.log(`${method} ${url} → ${statusCode} (${durationMs}ms)`);
 });
