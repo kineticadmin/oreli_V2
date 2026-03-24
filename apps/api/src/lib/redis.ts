@@ -7,14 +7,17 @@ if (!REDIS_URL) {
 }
 
 // Connexion principale — utilisée pour le cache et les opérations générales
+// maxRetriesPerRequest: 0 — ne pas attendre la reconnexion pour les commandes ponctuelles
+// retryStrategy: s'arrête après 5 tentatives pour ne pas bloquer les fonctions serverless
 export const redis = new Redis(REDIS_URL, {
-  maxRetriesPerRequest: 3,
+  maxRetriesPerRequest: 0,
   retryStrategy: (attempt) => {
-    const maxDelayMs = 3000;
-    const delayMs = Math.min(attempt * 200, maxDelayMs);
-    return delayMs;
+    if (attempt > 5) return null; // Arrête les reconnexions après 5 tentatives
+    const maxDelayMs = 2000;
+    return Math.min(attempt * 200, maxDelayMs);
   },
-  lazyConnect: false,
+  lazyConnect: true,
+  connectTimeout: 5000,
 });
 
 redis.on('error', (error) => {
