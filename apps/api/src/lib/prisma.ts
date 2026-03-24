@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from '@oreli/prisma';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 export type { Prisma };
 
