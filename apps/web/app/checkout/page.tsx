@@ -233,7 +233,7 @@ function CheckoutForm({ productId }: { productId: string }) {
   );
 }
 
-export default function CheckoutPage() {
+function CheckoutPageInner() {
   const searchParams = useSearchParams();
   const productId = searchParams.get('productId');
 
@@ -248,9 +248,13 @@ export default function CheckoutPage() {
     );
   }
 
+  return <CheckoutForm productId={productId} />;
+}
+
+export default function CheckoutPage() {
   return (
     <Suspense>
-      <CheckoutForm productId={productId} />
+      <CheckoutPageInner />
     </Suspense>
   );
 }
