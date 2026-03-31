@@ -27,7 +27,13 @@ export default function GiftsScreen() {
     const insets = useSafeAreaInsets();
 
     const { data: curatedProducts, isLoading: isLoadingCurated } = useCuratedProducts();
-    const { data: productsPages, isLoading: isLoadingProducts } = useProductsList({ limit: 20 });
+    const {
+        data: productsPages,
+        isLoading: isLoadingProducts,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+    } = useProductsList({ limit: 20 });
 
     const allProducts = productsPages?.pages.flatMap((page) => page.items) ?? [];
 
@@ -38,7 +44,18 @@ export default function GiftsScreen() {
                 <Text style={styles.headerTitle}>Découvrir</Text>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 100 }}
+                onScroll={({ nativeEvent }) => {
+                    const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+                    const isNearBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 200;
+                    if (isNearBottom && hasNextPage && !isFetchingNextPage) {
+                        fetchNextPage();
+                    }
+                }}
+                scrollEventThrottle={400}
+            >
                 {/* Coups de cœur */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>✦  Coups de cœur</Text>
@@ -111,6 +128,9 @@ export default function GiftsScreen() {
                                 </TouchableOpacity>
                             ))}
                         </View>
+                    )}
+                    {isFetchingNextPage && (
+                        <ActivityIndicator color={Colors.gold} style={{ marginTop: 16, marginBottom: 8 }} />
                     )}
                 </View>
             </ScrollView>

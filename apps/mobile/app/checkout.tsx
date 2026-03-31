@@ -18,6 +18,7 @@ import { Typography, Spacing, Radius, Shadow } from '@/constants/Typography';
 import { useGiftStore } from '@/store/giftStore';
 import { useProductDetail, formatPrice } from '@/hooks/useCatalog';
 import { useCreateOrder, toSurpriseMode, toDeliveryDate } from '@/hooks/useCreateOrder';
+import { useAddresses } from '@/hooks/useProfile';
 import { t } from '@/constants/i18n';
 
 const PREMIUM_WRAP_PRICE_CENTS = 500;
@@ -26,8 +27,10 @@ export default function CheckoutScreen() {
     const Colors = useThemeColors();
     const styles = createStyles(Colors);
     const insets = useSafeAreaInsets();
-    const { giftFlow, updateGiftFlow, userAddress, setLastOrderId } = useGiftStore();
+    const { giftFlow, updateGiftFlow, setLastOrderId } = useGiftStore();
     const [editingMsg, setEditingMsg] = useState(false);
+    const { data: addresses } = useAddresses();
+    const defaultAddress = addresses?.find((a) => a.isDefault) ?? addresses?.[0];
 
     const { initPaymentSheet, presentPaymentSheet } = useStripe();
     const createOrder = useCreateOrder();
@@ -41,13 +44,16 @@ export default function CheckoutScreen() {
     const handleConfirm = async () => {
         if (!product || !giftFlow.selectedProductId) return;
 
-        // Construire l'adresse en remplissant les champs manquants avec des valeurs par défaut Bruxelles
+        if (!defaultAddress) {
+            Alert.alert('Adresse manquante', 'Ajoute une adresse de livraison dans ton profil.');
+            return;
+        }
         const deliveryAddress = {
-            name: userAddress.name,
-            line: userAddress.line,
-            city: 'Bruxelles',
-            postalCode: '1000',
-            country: 'BE',
+            name: defaultAddress.name,
+            line: defaultAddress.line,
+            city: defaultAddress.city,
+            postalCode: defaultAddress.postalCode,
+            country: defaultAddress.country,
         };
 
         createOrder.mutate(
@@ -123,9 +129,15 @@ export default function CheckoutScreen() {
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>{t('checkout.shippingAddress')}</Text>
                     <View style={styles.card}>
-                        <Text style={styles.addressName}>{userAddress.name}</Text>
-                        <Text style={styles.addressLine}>{userAddress.line}</Text>
-                        <TouchableOpacity style={styles.modifyBtn}>
+                        {defaultAddress ? (
+                            <>
+                                <Text style={styles.addressName}>{defaultAddress.name}</Text>
+                                <Text style={styles.addressLine}>{defaultAddress.line}, {defaultAddress.postalCode} {defaultAddress.city}</Text>
+                            </>
+                        ) : (
+                            <Text style={styles.addressLine}>Aucune adresse enregistrée</Text>
+                        )}
+                        <TouchableOpacity style={styles.modifyBtn} onPress={() => router.push('/(tabs)/profile' as never)}>
                             <Text style={styles.modifyBtnText}>{t('common.modify')}</Text>
                         </TouchableOpacity>
                     </View>
