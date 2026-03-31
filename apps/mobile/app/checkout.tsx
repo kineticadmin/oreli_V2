@@ -13,7 +13,8 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useStripe } from '@stripe/stripe-react-native';
-import { useThemeColors, ThemeColors } from '@/constants/Colors';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useThemeColors, ThemeColors, AccentGradient } from '@/constants/Colors';
 import { Typography, Spacing, Radius, Shadow } from '@/constants/Typography';
 import { useGiftStore } from '@/store/giftStore';
 import { useProductDetail, formatPrice } from '@/hooks/useCatalog';
@@ -208,18 +209,25 @@ export default function CheckoutScreen() {
             {/* CTA */}
             <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
                 <TouchableOpacity
-                    style={[styles.confirmBtn, (!product || isLoading) && styles.confirmBtnDisabled]}
+                    style={[styles.confirmBtnWrap, (!product || isLoading) && styles.confirmBtnDisabled]}
                     onPress={handleConfirm}
                     disabled={!product || isLoading}
                     activeOpacity={0.85}
                 >
-                    {isLoading ? (
-                        <ActivityIndicator color={Colors.obsidian} />
-                    ) : (
-                        <Text style={styles.confirmBtnText}>
-                            {t('checkout.confirmText', { total: product ? formatPrice(totalPriceCents, product.currency) : '…' })}
-                        </Text>
-                    )}
+                    <LinearGradient
+                        colors={AccentGradient.colors}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.confirmBtn}
+                    >
+                        {isLoading ? (
+                            <ActivityIndicator color="#FFFFFF" />
+                        ) : (
+                            <Text style={styles.confirmBtnText}>
+                                {t('checkout.confirmText', { total: product ? formatPrice(totalPriceCents, product.currency) : '…' })}
+                            </Text>
+                        )}
+                    </LinearGradient>
                 </TouchableOpacity>
             </View>
         </View>
@@ -262,7 +270,8 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
     priceTotalLabel: { fontSize: Typography.md, fontFamily: Typography.bold, color: Colors.cream },
     priceTotalValue: { fontSize: Typography.xl, fontFamily: Typography.bold, color: Colors.cream },
     footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: Spacing.xl, paddingTop: 16, backgroundColor: Colors.obsidian + 'F0', borderTopWidth: 1, borderTopColor: Colors.warm },
-    confirmBtn: { backgroundColor: Colors.gold, paddingVertical: 17, borderRadius: Radius.full, alignItems: 'center' },
+    confirmBtnWrap: { borderRadius: Radius.full, overflow: 'hidden' },
+    confirmBtn: { paddingVertical: 17, borderRadius: Radius.full, alignItems: 'center' },
     confirmBtnDisabled: { opacity: 0.5 },
-    confirmBtnText: { fontSize: Typography.base, fontFamily: Typography.semibold, color: Colors.obsidian },
+    confirmBtnText: { fontSize: Typography.base, fontFamily: Typography.semibold, color: '#FFFFFF' },
 });

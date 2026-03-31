@@ -4,7 +4,8 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
-import { useThemeColors, ThemeColors } from '@/constants/Colors';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useThemeColors, ThemeColors, AccentGradient } from '@/constants/Colors';
 import { Typography, Spacing, Radius } from '@/constants/Typography';
 import { useGiftStore } from '@/store/giftStore';
 import { useProductDetail, formatPrice } from '@/hooks/useCatalog';
@@ -95,14 +96,19 @@ export default function ConfirmationScreen() {
 
                 <View style={styles.actions}>
                     <TouchableOpacity
-                        style={styles.trackBtn}
+                        style={styles.trackBtnWrap}
                         activeOpacity={0.85}
                         onPress={handleTrack}
                     >
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                            <Feather name="map-pin" size={16} color={Colors.obsidian} />
+                        <LinearGradient
+                            colors={AccentGradient.colors}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={styles.trackBtn}
+                        >
+                            <Feather name="map-pin" size={16} color="#FFFFFF" />
                             <Text style={styles.trackBtnText}>Suivre ma commande</Text>
-                        </View>
+                        </LinearGradient>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -133,8 +139,9 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
     orderValueBold: { fontSize: Typography.md, fontFamily: Typography.bold, color: Colors.cream, textAlign: 'right' },
     divider: { height: 1, backgroundColor: Colors.warm },
     actions: { width: '100%', gap: 12 },
-    trackBtn: { backgroundColor: Colors.gold, paddingVertical: 16, borderRadius: Radius.full, alignItems: 'center' },
-    trackBtnText: { fontSize: Typography.base, fontFamily: Typography.semibold, color: Colors.obsidian },
+    trackBtnWrap: { borderRadius: Radius.full, overflow: 'hidden' },
+    trackBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16, borderRadius: Radius.full },
+    trackBtnText: { fontSize: Typography.base, fontFamily: Typography.semibold, color: '#FFFFFF' },
     homeBtn: { backgroundColor: Colors.charcoal, paddingVertical: 16, borderRadius: Radius.full, alignItems: 'center', borderWidth: 1, borderColor: Colors.warm },
     homeBtnText: { fontSize: Typography.base, fontFamily: Typography.medium, color: Colors.cream },
 });

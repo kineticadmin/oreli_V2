@@ -14,7 +14,8 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
-import { useThemeColors, ThemeColors } from '@/constants/Colors';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useThemeColors, ThemeColors, AccentGradient } from '@/constants/Colors';
 import { Typography, Spacing, Radius } from '@/constants/Typography';
 import { useProductDetail, formatPrice } from '@/hooks/useCatalog';
 import { useGiftStore } from '@/store/giftStore';
@@ -173,11 +174,16 @@ export default function ProductDetailScreen() {
                     <Text style={styles.priceLabel}>Total</Text>
                     <Text style={styles.priceValue}>{formatPrice(totalPriceCents, product.currency)}</Text>
                 </View>
-                <TouchableOpacity style={styles.buyBtn} onPress={handleGiftFlow} activeOpacity={0.85}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <TouchableOpacity style={styles.buyBtnWrap} onPress={handleGiftFlow} activeOpacity={0.85}>
+                    <LinearGradient
+                        colors={AccentGradient.colors}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.buyBtn}
+                    >
                         <Text style={styles.buyBtnText}>Offrir ce cadeau</Text>
-                        <Feather name="arrow-right" size={16} color={Colors.obsidian} />
-                    </View>
+                        <Feather name="arrow-right" size={16} color="#FFFFFF" />
+                    </LinearGradient>
                 </TouchableOpacity>
             </View>
         </View>
@@ -227,6 +233,7 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
     priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     priceLabel: { fontSize: Typography.sm, fontFamily: Typography.regular, color: Colors.muted },
     priceValue: { fontSize: Typography.lg, fontFamily: Typography.bold, color: Colors.cream },
-    buyBtn: { backgroundColor: Colors.gold, paddingVertical: 16, borderRadius: Radius.full, alignItems: 'center' },
-    buyBtnText: { fontSize: Typography.base, fontFamily: Typography.semibold, color: Colors.obsidian },
+    buyBtnWrap: { borderRadius: Radius.full, overflow: 'hidden' },
+    buyBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16, borderRadius: Radius.full },
+    buyBtnText: { fontSize: Typography.base, fontFamily: Typography.semibold, color: '#FFFFFF' },
 });

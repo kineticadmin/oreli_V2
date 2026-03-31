@@ -1,7 +1,8 @@
 import { Tabs } from 'expo-router';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useThemeColors, ThemeColors } from '@/constants/Colors';
+import { useThemeColors, ThemeColors, AccentGradient } from '@/constants/Colors';
 import { Typography, Shadow } from '@/constants/Typography';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Feather } from '@expo/vector-icons';
@@ -31,10 +32,17 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
                             key={tab.key}
                             activeOpacity={0.85}
                             onPress={() => router.push('/gift-flow')}
-                            style={styles.mainTab}
+                            style={styles.mainTabWrap}
                         >
-                            <Feather name={tab.icon} size={18} color={Colors.charcoal} />
-                            <Text style={styles.mainLabel}>{tab.label}</Text>
+                            <LinearGradient
+                                colors={AccentGradient.colors}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={styles.mainTab}
+                            >
+                                <Feather name={tab.icon} size={18} color="#FFFFFF" />
+                                <Text style={styles.mainLabel}>{tab.label}</Text>
+                            </LinearGradient>
                         </TouchableOpacity>
                     );
                 }
@@ -81,23 +89,26 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
     circleTabActive: {
         backgroundColor: Colors.cream,
     },
-    // Central CTA — always dark pill (TripGlide "See more" style)
-    mainTab: {
+    // Central CTA — vivid blue gradient pill
+    mainTabWrap: {
         flex: 1,
         height: 52,
         marginHorizontal: 10,
         borderRadius: 26,
-        backgroundColor: Colors.cream,
+        overflow: 'hidden',
+        ...Shadow.float,
+    },
+    mainTab: {
+        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,
-        ...Shadow.float,
     },
     mainLabel: {
         fontSize: Typography.sm,
         fontFamily: Typography.semibold,
-        color: Colors.charcoal,
+        color: '#FFFFFF',
         letterSpacing: 0.2,
     },
 });
