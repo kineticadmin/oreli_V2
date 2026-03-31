@@ -1,5 +1,8 @@
 FROM node:20-slim
 
+# OpenSSL requis par Prisma (absent de node:20-slim par defaut)
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # pnpm via corepack (inclus dans Node 20, PATH garanti)
