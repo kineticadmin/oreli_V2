@@ -277,7 +277,7 @@ export default function HomeScreen() {
                     {isLoadingRelationships ? (
                         <ActivityIndicator color={Colors.gold} />
                     ) : (
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: Spacing.xl, gap: Spacing.lg }}>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -Spacing.xl }} contentContainerStyle={{ paddingHorizontal: Spacing.xl, gap: Spacing.lg }}>
                             <TouchableOpacity
                                 style={styles.closeOneItem}
                                 activeOpacity={0.7}
@@ -328,7 +328,7 @@ export default function HomeScreen() {
                         {isLoadingCurated ? (
                             <ActivityIndicator color={Colors.gold} />
                         ) : (
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: Spacing.xl, gap: Spacing.md }}>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -Spacing.xl }} contentContainerStyle={{ paddingHorizontal: Spacing.xl, gap: Spacing.md }}>
                                 {(curatedProducts ?? []).map((product) => (
                                     <TouchableOpacity
                                         key={product.id}
