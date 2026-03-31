@@ -4,7 +4,6 @@ import {
     Text,
     ScrollView,
     TouchableOpacity,
-    ImageBackground,
     Image,
     StyleSheet,
     Dimensions,
@@ -14,7 +13,6 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius } from '@/constants/Typography';
@@ -173,35 +171,32 @@ export default function HomeScreen() {
                                         style={styles.heroCard}
                                         onPress={() => router.push(`/product/${item.id}` as never)}
                                     >
-                                        <RNAnimated.View style={{ flex: 1, transform: [{ rotate }, { scale }] }}>
-                                            <ImageBackground
-                                                source={item.coverImageUrl ? { uri: item.coverImageUrl } : undefined}
-                                                style={styles.heroImage}
-                                                imageStyle={{ borderRadius: Radius['2xl'] }}
-                                            >
-                                                {!item.coverImageUrl && (
+                                        <RNAnimated.View style={[styles.heroCardInner, { transform: [{ rotate }, { scale }] }]}>
+                                            {/* Image pure — pas de gradient */}
+                                            <View style={styles.heroImageWrap}>
+                                                {item.coverImageUrl ? (
+                                                    <Image source={{ uri: item.coverImageUrl }} style={styles.heroImage} />
+                                                ) : (
                                                     <View style={styles.heroImageFallback}>
                                                         <Feather name="gift" size={48} color={Colors.muted} />
                                                     </View>
                                                 )}
-                                                <LinearGradient
-                                                    colors={['transparent', 'rgba(0,0,0,0.82)']}
-                                                    style={styles.heroGradient}
-                                                >
-                                                    {item.isLastMinuteOk && (
-                                                        <View style={styles.heroBadge}>
-                                                            <Feather name="zap" size={10} color="#FFFFFF" />
-                                                            <Text style={styles.heroBadgeText}>Livraison rapide</Text>
-                                                        </View>
-                                                    )}
-                                                    <Text style={styles.heroTitle} numberOfLines={2}>{item.title}</Text>
-                                                    <View style={styles.heroLocation}>
-                                                        <Feather name="map-pin" size={12} color="#fff" />
-                                                        <Text style={styles.heroSubtitle}>{item.seller.displayName}</Text>
-                                                        <Text style={styles.heroPrice}>{formatPrice(item.priceAmount, item.currency)}</Text>
+                                                {item.isLastMinuteOk && (
+                                                    <View style={styles.heroBadge}>
+                                                        <Feather name="zap" size={10} color="#FFFFFF" />
+                                                        <Text style={styles.heroBadgeText}>Rapide</Text>
                                                     </View>
-                                                </LinearGradient>
-                                            </ImageBackground>
+                                                )}
+                                            </View>
+                                            {/* Info sous l'image — texte sombre sur fond blanc */}
+                                            <View style={styles.heroInfo}>
+                                                <Text style={styles.heroTitle} numberOfLines={2}>{item.title}</Text>
+                                                <View style={styles.heroLocation}>
+                                                    <Feather name="map-pin" size={12} color={Colors.muted} />
+                                                    <Text style={styles.heroSubtitle} numberOfLines={1}>{item.seller.displayName}</Text>
+                                                    <Text style={styles.heroPrice}>{formatPrice(item.priceAmount, item.currency)}</Text>
+                                                </View>
+                                            </View>
                                         </RNAnimated.View>
                                     </TouchableOpacity>
                                 );
@@ -492,51 +487,63 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
     },
     heroCard: {
         width: CARD_WIDTH,
-        height: CARD_HEIGHT,
-        borderRadius: Radius['2xl'],
-        shadowColor: '#1A120B',
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.14,
-        shadowRadius: 24,
-        elevation: 6,
-        overflow: 'visible',
+        // height piloté par heroCardInner (image + info)
     },
-    heroImage: { flex: 1 },
+    heroCardInner: {
+        width: CARD_WIDTH,
+        borderRadius: Radius['2xl'],
+        backgroundColor: Colors.charcoal,
+        overflow: 'hidden',
+        shadowColor: '#1A120B',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.10,
+        shadowRadius: 20,
+        elevation: 5,
+    },
+    heroImageWrap: {
+        width: CARD_WIDTH,
+        height: CARD_HEIGHT - 80,
+        position: 'relative',
+    },
+    heroImage: {
+        width: CARD_WIDTH,
+        height: CARD_HEIGHT - 80,
+        resizeMode: 'cover',
+    },
     heroImageFallback: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: Colors.charcoal,
-        borderRadius: Radius['2xl'],
+        backgroundColor: Colors.stone,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    heroGradient: {
-        flex: 1,
-        borderRadius: Radius['2xl'],
-        justifyContent: 'flex-end',
-        padding: Spacing.xl,
+    heroInfo: {
+        paddingHorizontal: 16,
+        paddingVertical: 14,
         gap: 6,
     },
     heroBadge: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
-        alignSelf: 'flex-start',
+        position: 'absolute',
+        top: 12,
+        left: 12,
         backgroundColor: Colors.gold,
         paddingHorizontal: 10,
         paddingVertical: 4,
         borderRadius: Radius.full,
-        marginBottom: 4,
     },
     heroBadgeText: { fontSize: 10, fontFamily: Typography.bold, color: '#FFFFFF' },
     heroTitle: {
-        fontSize: Typography['2xl'],
+        fontSize: Typography.md,
         fontFamily: Typography.bold,
-        color: '#fff',
-        letterSpacing: -0.5,
+        color: Colors.cream,
+        letterSpacing: -0.3,
+        lineHeight: 22,
     },
     heroLocation: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    heroSubtitle: { fontSize: Typography.sm, fontFamily: Typography.medium, color: '#fff', flex: 1 },
-    heroPrice: { fontSize: Typography.sm, fontFamily: Typography.bold, color: Colors.gold },
+    heroSubtitle: { fontSize: Typography.xs, fontFamily: Typography.medium, color: Colors.muted, flex: 1 },
+    heroPrice: { fontSize: Typography.sm, fontFamily: Typography.bold, color: Colors.cream },
     section: { paddingHorizontal: Spacing.xl },
     sectionHeaderRow: {
         flexDirection: 'row',
