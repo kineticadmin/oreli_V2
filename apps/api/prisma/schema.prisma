@@ -1,14 +1,11 @@
 // Oreli — Schema Prisma V1 (apps/api)
 // Source de vérité pour les migrations : packages/prisma/schema.prisma
 // GARDER EN SYNC avec packages/prisma/schema.prisma
-// output custom dans src/generated/client — requis pour que Vercel/nft
-// inclue le binaire query engine dans le bundle lambda (pnpm virtual store non tracé)
 
 generator client {
   provider        = "prisma-client-js"
-  output          = "../src/generated/client"
   previewFeatures = ["postgresqlExtensions"]
-  binaryTargets   = ["native", "rhel-openssl-3.0.x"]
+  binaryTargets   = ["native"]
 }
 
 datasource db {
