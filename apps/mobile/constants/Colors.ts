@@ -21,24 +21,26 @@ const dark = {
     glassDark: 'rgba(0,0,0,0.30)',
 };
 
+// Light theme — inspired by clean editorial gifting aesthetic
+// Warm ivory background, espresso text, gold as rare accent
 const light = {
-    obsidian: '#FCFBF9', // Clean pearl/ivory background for main app
-    charcoal: '#FFFFFF', // Pure white for cards to pop
-    stone: '#F4F1ED',    // Warm gray/sand for inner elements
-    warm: '#E8E4DD',     // Soft greige borders
-    gold: '#C27803',     // Richer gold with excellent light contrast
-    goldLight: '#F59E0B',
-    goldPale: '#FEF3C7',
-    cream: '#1C1917',    // Deep espresso black-brown text
-    muted: '#78716C',    // Warm gray muted text
-    lavender: '#8B5CF6',
-    lavenderLight: '#C4B5FD',
-    success: '#10B981',
-    error: '#EF4444',
+    obsidian: '#F7F4F0',      // Warm ivory — main app background
+    charcoal: '#FFFFFF',       // Pure white — card surfaces
+    stone: '#EDE8E1',          // Warm sand — inputs, chips, tags
+    warm: '#DDD7CE',           // Barely-there separator (rely on shadow for cards)
+    gold: '#B87A06',           // Rich amber — badges, ratings, price highlights only
+    goldLight: '#D4920A',
+    goldPale: '#FDF3DC',
+    cream: '#1A120B',          // Deep warm espresso — primary text
+    muted: '#9A8E84',          // Warm taupe — secondary/placeholder text
+    lavender: '#7C3AED',
+    lavenderLight: '#A78BFA',
+    success: '#1A7A4A',
+    error: '#C82B22',
     white: '#FFFFFF',
-    glass: 'rgba(0,0,0,0.03)',
-    glassBorder: 'rgba(0,0,0,0.06)',
-    glassDark: 'rgba(255,255,255,0.70)',
+    glass: 'rgba(26, 18, 11, 0.04)',
+    glassBorder: 'rgba(26, 18, 11, 0.07)',
+    glassDark: 'rgba(255, 255, 255, 0.94)',
 };
 
 export type ThemeColors = typeof dark;
@@ -50,5 +52,5 @@ export function useThemeColors(): ThemeColors {
     return effective === 'dark' ? dark : light;
 }
 
-// Fallback for non-component files (might not react to changes)
-export const Colors = dark;
+// Fallback for non-component files
+export const Colors = light;

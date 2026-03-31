@@ -67,16 +67,16 @@ export default function GiftsScreen() {
                                 <TouchableOpacity
                                     key={product.id}
                                     style={styles.featuredCard}
-                                    activeOpacity={0.85}
+                                    activeOpacity={0.88}
                                     onPress={() => router.push(`/product/${product.id}` as never)}
                                 >
                                     <ImageBackground
                                         source={product.coverImageUrl ? { uri: product.coverImageUrl } : undefined}
                                         style={styles.featuredImage}
-                                        imageStyle={{ borderRadius: Radius.xl }}
+                                        imageStyle={{ borderRadius: Radius['2xl'] }}
                                     >
                                         <LinearGradient
-                                            colors={['transparent', 'rgba(0,0,0,0.80)']}
+                                            colors={['transparent', 'rgba(0,0,0,0.78)']}
                                             style={styles.featuredGradient}
                                         >
                                             {product.isLastMinuteOk && (
@@ -84,6 +84,10 @@ export default function GiftsScreen() {
                                                     <Text style={styles.matchBadgeText}>⚡ Rapide</Text>
                                                 </View>
                                             )}
+                                            {/* Favorite floating button */}
+                                            <View style={styles.favoriteBtn}>
+                                                <Feather name="heart" size={14} color={Colors.cream} />
+                                            </View>
                                             <Text style={styles.featuredName} numberOfLines={2}>{product.title}</Text>
                                             <Text style={styles.featuredPrice}>{formatPrice(product.priceAmount, product.currency)}</Text>
                                         </LinearGradient>
@@ -105,7 +109,7 @@ export default function GiftsScreen() {
                                 <TouchableOpacity
                                     key={product.id}
                                     style={styles.gridCard}
-                                    activeOpacity={0.85}
+                                    activeOpacity={0.88}
                                     onPress={() => router.push(`/product/${product.id}` as never)}
                                 >
                                     <View style={styles.gridImageWrap}>
@@ -143,22 +147,44 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
     header: {
         paddingHorizontal: Spacing.xl,
         paddingVertical: Spacing.lg,
-        borderBottomWidth: 1,
-        borderBottomColor: Colors.warm,
     },
-    headerTitle: { fontSize: Typography.xl, fontFamily: Typography.bold, color: Colors.cream, letterSpacing: -0.5 },
+    headerTitle: {
+        fontSize: Typography['2xl'],
+        fontFamily: Typography.bold,
+        color: Colors.cream,
+        letterSpacing: -0.8,
+    },
     section: { paddingHorizontal: Spacing.xl, marginTop: Spacing['2xl'] },
-    sectionTitle: { fontSize: Typography.md, fontFamily: Typography.bold, color: Colors.cream, letterSpacing: -0.3, marginBottom: Spacing.lg },
+    sectionTitle: {
+        fontSize: Typography.xs,
+        fontFamily: Typography.semibold,
+        color: Colors.muted,
+        letterSpacing: 0.8,
+        textTransform: 'uppercase',
+        marginBottom: Spacing.lg,
+    },
+    // Featured carousel cards — image-forward, large, rounded
     featuredCard: {
-        width: 200,
-        height: 260,
+        width: 220,
+        height: 290,
         marginRight: Spacing.md,
-        borderRadius: Radius.xl,
+        borderRadius: Radius['2xl'],
         overflow: 'hidden',
-        ...Shadow.card,
+        ...Shadow.cardHover,
     },
     featuredImage: { flex: 1, justifyContent: 'flex-end' },
-    featuredGradient: { flex: 1, justifyContent: 'flex-end', padding: 14 },
+    featuredGradient: { flex: 1, justifyContent: 'flex-end', padding: 16 },
+    favoriteBtn: {
+        position: 'absolute',
+        top: 14,
+        right: 14,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: 'rgba(255,255,255,0.20)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     matchBadge: {
         alignSelf: 'flex-start',
         backgroundColor: Colors.gold,
@@ -167,21 +193,20 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
         borderRadius: Radius.full,
         marginBottom: 8,
     },
-    matchBadgeText: { fontSize: 10, fontFamily: Typography.bold, color: Colors.obsidian },
-    featuredName: { fontSize: Typography.sm, fontFamily: Typography.bold, color: Colors.cream, lineHeight: 18, marginBottom: 4 },
-    featuredPrice: { fontSize: Typography.md, fontFamily: Typography.bold, color: Colors.gold },
+    matchBadgeText: { fontSize: 10, fontFamily: Typography.bold, color: '#FFF' },
+    featuredName: { fontSize: Typography.sm, fontFamily: Typography.bold, color: '#FFF', lineHeight: 18, marginBottom: 4 },
+    featuredPrice: { fontSize: Typography.md, fontFamily: Typography.bold, color: Colors.goldLight },
+    // Grid — white cards, shadow only (no borders)
     grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.md },
     gridCard: {
         width: CARD_W,
         backgroundColor: Colors.charcoal,
         borderRadius: Radius.xl,
         overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: Colors.warm,
         ...Shadow.card,
     },
     gridImageWrap: {
-        height: 130,
+        height: 148,
         backgroundColor: Colors.stone,
         alignItems: 'center',
         justifyContent: 'center',
@@ -189,15 +214,13 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
     },
     gridImage: {
         width: '100%',
-        height: 130,
+        height: 148,
     },
     expressBadge: {
         position: 'absolute',
-        top: 8,
-        right: 8,
-        backgroundColor: Colors.gold + '33',
-        borderWidth: 1,
-        borderColor: Colors.gold + '66',
+        top: 10,
+        right: 10,
+        backgroundColor: 'rgba(0,0,0,0.40)',
         width: 26,
         height: 26,
         borderRadius: 13,
@@ -205,8 +228,8 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
         justifyContent: 'center',
     },
     expressBadgeText: { fontSize: 12 },
-    gridInfo: { padding: 10, gap: 3 },
+    gridInfo: { padding: 12, gap: 3 },
     gridName: { fontSize: Typography.xs, fontFamily: Typography.semibold, color: Colors.cream, lineHeight: 16 },
     gridSeller: { fontSize: 10, fontFamily: Typography.regular, color: Colors.muted },
-    gridPrice: { fontSize: Typography.sm, fontFamily: Typography.bold, color: Colors.gold, marginTop: 2 },
+    gridPrice: { fontSize: Typography.sm, fontFamily: Typography.bold, color: Colors.cream, marginTop: 4 },
 });

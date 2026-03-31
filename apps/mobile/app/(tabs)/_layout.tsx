@@ -1,66 +1,40 @@
 import { Tabs } from 'expo-router';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeColors, ThemeColors } from '@/constants/Colors';
-import { Typography } from '@/constants/Typography';
-import { t } from '@/constants/i18n';
+import { Typography, Shadow } from '@/constants/Typography';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
 const NAV_TABS = [
-    { key: 'index', label: '', icon: 'home' as const, isMain: false },
-    { key: 'close', label: '', icon: 'heart' as const, isMain: false },
-    { key: 'gifts', label: 'Rechercher', icon: 'search' as const, isMain: true },
-    { key: 'profile', label: '', icon: 'user' as const, isMain: false },
+    { key: 'index',   icon: 'home'   as const, isMain: false },
+    { key: 'close',   icon: 'heart'  as const, isMain: false },
+    { key: 'gifts',   icon: 'search' as const, isMain: true, label: 'Rechercher' },
+    { key: 'profile', icon: 'user'   as const, isMain: false },
 ];
-
-import { useColorScheme } from 'react-native';
-import { useGiftStore } from '@/store/giftStore';
-import { Shadow } from '@/constants/Typography';
 
 function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     const Colors = useThemeColors();
     const styles = createStyles(Colors);
     const insets = useSafeAreaInsets();
 
-    const systemScheme = useColorScheme();
-    const theme = useGiftStore((s) => s.theme);
-    const effectiveTheme = theme === 'system' ? systemScheme : theme;
-    const isDark = effectiveTheme === 'dark';
-
     return (
-        <View style={[styles.wrapper, { bottom: insets.bottom + 12 }]}>
-            {NAV_TABS.map((tab, idx) => {
-                // Find the actual index of the screen in the navigation state
-                // Since 'orders' is still in the Tabs.Screen list but not in NAV_TABS,
-                // we need to match by route name.
-                const routeIndex = state.routes.findIndex(r => r.name === tab.key);
+        <View style={[styles.wrapper, { bottom: insets.bottom + 16 }]}>
+            {NAV_TABS.map((tab) => {
+                const routeIndex = state.routes.findIndex((r) => r.name === tab.key);
                 const isActive = state.index === routeIndex;
 
                 if (tab.isMain) {
                     return (
                         <TouchableOpacity
                             key={tab.key}
-                            activeOpacity={0.8}
-                            onPress={() => {
-                                if (tab.key === 'gifts') {
-                                    router.push('/gift-flow');
-                                } else {
-                                    navigation.navigate(tab.key);
-                                }
-                            }}
-                            style={[styles.mainTab, isActive && styles.mainTabActive]}
+                            activeOpacity={0.85}
+                            onPress={() => router.push('/gift-flow')}
+                            style={styles.mainTab}
                         >
-                            <Feather
-                                name={tab.icon}
-                                size={20}
-                                color={isActive ? Colors.gold : Colors.muted}
-                            />
-                            <Text style={[styles.mainLabel, isActive && styles.mainLabelActive]}>
-                                {tab.label}
-                            </Text>
+                            <Feather name={tab.icon} size={18} color={Colors.charcoal} />
+                            <Text style={styles.mainLabel}>{tab.label}</Text>
                         </TouchableOpacity>
                     );
                 }
@@ -74,8 +48,8 @@ function CustomTabBar({ state, navigation }: BottomTabBarProps) {
                     >
                         <Feather
                             name={tab.icon}
-                            size={22}
-                            color={isActive ? Colors.gold : Colors.muted}
+                            size={20}
+                            color={isActive ? Colors.charcoal : Colors.muted}
                         />
                     </TouchableOpacity>
                 );
@@ -92,8 +66,8 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: 'transparent',
     },
+    // Inactive: white circle with soft shadow
     circleTab: {
         width: 52,
         height: 52,
@@ -101,44 +75,34 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
         backgroundColor: Colors.charcoal,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: Colors.warm,
-        ...Shadow.card,
+        ...Shadow.float,
     },
+    // Active: filled near-black circle — icon turns white
     circleTabActive: {
-        borderColor: Colors.gold + '44',
+        backgroundColor: Colors.cream,
     },
+    // Central CTA — always dark pill (TripGlide "See more" style)
     mainTab: {
         flex: 1,
         height: 52,
-        marginHorizontal: 12,
+        marginHorizontal: 10,
         borderRadius: 26,
-        backgroundColor: Colors.charcoal,
+        backgroundColor: Colors.cream,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,
-        borderWidth: 1,
-        borderColor: Colors.warm,
-        ...Shadow.card,
-    },
-    mainTabActive: {
-        borderColor: Colors.gold + '44',
+        ...Shadow.float,
     },
     mainLabel: {
-        fontSize: 15,
-        fontFamily: Typography.medium,
-        color: Colors.muted,
-    },
-    mainLabelActive: {
-        color: Colors.gold,
+        fontSize: Typography.sm,
         fontFamily: Typography.semibold,
+        color: Colors.charcoal,
+        letterSpacing: 0.2,
     },
 });
 
 export default function TabsLayout() {
-    const Colors = useThemeColors();
-    const styles = createStyles(Colors);
     return (
         <Tabs
             tabBar={(props) => <CustomTabBar {...props} />}

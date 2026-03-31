@@ -45,9 +45,9 @@ function formatEventDate(isoDate: string): string {
 }
 
 function urgencyColor(daysUntil: number, Colors: ThemeColors): string {
-    if (daysUntil <= 3) return Colors.danger ?? '#E53935';
+    if (daysUntil <= 3) return Colors.error;
     if (daysUntil <= 7) return '#F57C00';
-    return Colors.success ?? '#43A047';
+    return Colors.success;
 }
 
 export default function HomeScreen() {
@@ -469,16 +469,14 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: Colors.gold,
+        backgroundColor: Colors.cream,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: Colors.warm,
     },
     avatarText: {
         fontSize: Typography.md,
         fontFamily: Typography.bold,
-        color: Colors.obsidian,
+        color: Colors.charcoal,
     },
     heroContainer: { marginBottom: Spacing['2xl'] },
     heroPlaceholder: {
@@ -494,9 +492,9 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
         width: CARD_WIDTH,
         height: CARD_HEIGHT,
         borderRadius: Radius['2xl'],
-        shadowColor: Colors.gold,
+        shadowColor: '#1A120B',
         shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.15,
+        shadowOpacity: 0.14,
         shadowRadius: 24,
         elevation: 6,
         overflow: 'visible',
@@ -524,7 +522,7 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
         borderRadius: Radius.full,
         marginBottom: 4,
     },
-    heroBadgeText: { fontSize: 10, fontFamily: Typography.bold, color: Colors.obsidian },
+    heroBadgeText: { fontSize: 10, fontFamily: Typography.bold, color: '#FFFFFF' },
     heroTitle: {
         fontSize: Typography['2xl'],
         fontFamily: Typography.bold,
@@ -552,12 +550,14 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
     emptyState: {
         backgroundColor: Colors.charcoal,
         borderRadius: Radius.xl,
-        borderWidth: 1,
-        borderColor: Colors.warm,
-        borderStyle: 'dashed',
         padding: Spacing.xl,
         alignItems: 'center',
         gap: Spacing.sm,
+        shadowColor: '#1A120B',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 2,
     },
     emptyStateText: {
         fontSize: Typography.sm,
@@ -579,8 +579,11 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
         backgroundColor: Colors.charcoal,
         borderRadius: Radius['2xl'],
         gap: Spacing.md,
-        borderWidth: 1,
-        borderColor: Colors.warm,
+        shadowColor: '#1A120B',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 12,
+        elevation: 2,
     },
     eventAvatar: {
         width: 48,
@@ -629,9 +632,12 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
         width: 160,
         backgroundColor: Colors.charcoal,
         borderRadius: Radius.xl,
-        borderWidth: 1,
-        borderColor: Colors.warm,
         overflow: 'hidden',
+        shadowColor: '#1A120B',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.07,
+        shadowRadius: 12,
+        elevation: 3,
     },
     productImageContainer: { position: 'relative' },
     productImage: { width: 160, height: 140 },
@@ -644,12 +650,12 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
         position: 'absolute',
         top: 8,
         left: 8,
-        backgroundColor: Colors.obsidian + 'cc',
+        backgroundColor: 'rgba(0,0,0,0.55)',
         paddingHorizontal: 8,
         paddingVertical: 3,
         borderRadius: Radius.full,
     },
-    lastMinuteBadgeText: { fontSize: 10, fontFamily: Typography.semibold, color: Colors.gold },
+    lastMinuteBadgeText: { fontSize: 10, fontFamily: Typography.semibold, color: Colors.goldLight },
     productInfo: { padding: Spacing.md, gap: 3 },
     productTitle: {
         fontSize: Typography.sm,
