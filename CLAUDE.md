@@ -3,6 +3,64 @@
 Règles absolues pour tout agent Claude travaillant sur ce projet.
 Lire entièrement avant toute action.
 
+---
+
+## Etat du projet au 2026-03-31 — Lire en premier
+
+**Infrastructure** : Tout est déployé et fonctionnel.
+- API : https://oreliapi-production.up.railway.app (Railway, Node 20, Hono.js)
+- Seller Console : https://oreli-seller-console.vercel.app (Vercel, Next.js 14)
+- Web : https://oreli-web.vercel.app (Vercel, Next.js 14)
+- DB : Neon PostgreSQL — migrations appliquées, seed OK
+- Redis : Upstash (rediss://)
+
+**Roadmap** : voir `ROADMAP.md` — travail en cours sur Sprint 1 (Gift Flow V1).
+
+**Prisma schema** : `apps/api/prisma/schema.prisma` (PAS `packages/prisma/`)
+**Import Prisma** : `import { PrismaClient } from '@prisma/client'` (PAS depuis generated/)
+
+---
+
+## Travail multi-agents — Règles de coordination
+
+Quand plusieurs instances Claude travaillent en parallèle sur ce projet :
+
+### Partitionnement obligatoire par surface
+
+Chaque agent doit se cantonner à SA surface. Ne jamais toucher la surface d'un autre agent.
+
+| Surface | Dossier | Branche |
+|---------|---------|---------|
+| Agent Mobile | `apps/mobile/` | `feat/gift-flow-v1` |
+| Agent API | `apps/api/src/` | `feat/api-gift-flow` |
+| Agent Seller | `apps/seller-console/` | `feat/seller-improvements` |
+| Agent Web | `apps/web/` | `feat/web-improvements` |
+
+### Protocole avant de commencer
+
+1. Lire `ROADMAP.md` pour connaître l'état exact des tâches
+2. Annoncer dans le premier message quelle tâche tu prends (ex: "Je prends Sprint 1.1")
+3. Créer la branche feature depuis `main` : `git checkout -b feat/xxx`
+4. Ne modifier que les fichiers de ta surface
+5. Committer avec le format : `feat(mobile): description` ou `feat(api): description`
+6. Merger dans `main` uniquement quand la tâche est complète et testée
+
+### Fichiers partagés — interdits de modification sans coordination
+
+- `pnpm-lock.yaml` — ne jamais modifier manuellement
+- `turbo.json` — coordination requise
+- `packages/shared-types/` — coordination requise (impacte toutes les surfaces)
+- `apps/api/prisma/schema.prisma` — coordination requise (migrations DB)
+- `CLAUDE.md`, `ROADMAP.md` — mise à jour par l'agent principal uniquement
+
+### Conflits à éviter
+
+- Ne pas modifier `pnpm-lock.yaml` depuis deux branches en même temps
+- Ne pas créer de migration Prisma en parallèle
+- Ne pas modifier les types dans `packages/shared-types/` sans en informer les autres surfaces
+
+---
+
 ## Contexte Projet
 
 Oreli.ai est une marketplace two-sided de gifting IA (Belgique → Benelux → Europe).
