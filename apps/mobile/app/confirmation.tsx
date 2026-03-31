@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Feather } from '@expo/vector-icons';
 import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius } from '@/constants/Typography';
 import { useGiftStore } from '@/store/giftStore';
@@ -56,7 +57,7 @@ export default function ConfirmationScreen() {
                 {/* Success Icon */}
                 <View style={styles.successCircle}>
                     <View style={styles.successInner}>
-                        <Text style={styles.successCheck}>✓</Text>
+                        <Feather name="check" size={36} color={Colors.obsidian} />
                     </View>
                 </View>
 
@@ -98,7 +99,10 @@ export default function ConfirmationScreen() {
                         activeOpacity={0.85}
                         onPress={handleTrack}
                     >
-                        <Text style={styles.trackBtnText}>📍  Suivre ma commande</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <Feather name="map-pin" size={16} color={Colors.obsidian} />
+                            <Text style={styles.trackBtnText}>Suivre ma commande</Text>
+                        </View>
                     </TouchableOpacity>
 
                     <TouchableOpacity

@@ -58,7 +58,7 @@ export default function GiftsScreen() {
             >
                 {/* Coups de cœur */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>✦  Coups de cœur</Text>
+                    <Text style={styles.sectionTitle}>Coups de cœur</Text>
                     {isLoadingCurated ? (
                         <ActivityIndicator color={Colors.gold} style={{ marginTop: 20 }} />
                     ) : (
@@ -81,7 +81,8 @@ export default function GiftsScreen() {
                                         >
                                             {product.isLastMinuteOk && (
                                                 <View style={styles.matchBadge}>
-                                                    <Text style={styles.matchBadgeText}>⚡ Rapide</Text>
+                                                    <Feather name="zap" size={10} color="#FFFFFF" />
+                                                    <Text style={styles.matchBadgeText}>Rapide</Text>
                                                 </View>
                                             )}
                                             {/* Favorite floating button */}
@@ -120,7 +121,7 @@ export default function GiftsScreen() {
                                         )}
                                         {product.isLastMinuteOk && (
                                             <View style={styles.expressBadge}>
-                                                <Text style={styles.expressBadgeText}>⚡</Text>
+                                                <Feather name="zap" size={12} color={Colors.gold} />
                                             </View>
                                         )}
                                     </View>
@@ -186,6 +187,9 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
         justifyContent: 'center',
     },
     matchBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
         alignSelf: 'flex-start',
         backgroundColor: Colors.gold,
         paddingHorizontal: 8,

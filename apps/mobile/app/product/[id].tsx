@@ -13,6 +13,7 @@ import {
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Feather } from '@expo/vector-icons';
 import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius } from '@/constants/Typography';
 import { useProductDetail, formatPrice } from '@/hooks/useCatalog';
@@ -43,7 +44,7 @@ export default function ProductDetailScreen() {
         return (
             <View style={[styles.container, styles.loadingContainer]}>
                 <TouchableOpacity style={[styles.backBtn, { top: insets.top + 8 }]} onPress={() => router.back()}>
-                    <Text style={styles.backBtnText}>←</Text>
+                    <Feather name="arrow-left" size={20} color="#FFFFFF" />
                 </TouchableOpacity>
                 <ActivityIndicator color={Colors.gold} size="large" />
             </View>
@@ -74,7 +75,7 @@ export default function ProductDetailScreen() {
                             {item.url ? (
                                 <Image source={{ uri: item.url }} style={styles.galleryImage} />
                             ) : (
-                                <Text style={styles.galleryPlaceholder}>🖼</Text>
+                                <Feather name="image" size={48} color="#9A8E84" />
                             )}
                         </View>
                     )}
@@ -85,7 +86,7 @@ export default function ProductDetailScreen() {
                     style={[styles.backBtn, { top: insets.top + 8 }]}
                     onPress={() => router.back()}
                 >
-                    <Text style={styles.backBtnText}>←</Text>
+                    <Feather name="arrow-left" size={20} color="#FFFFFF" />
                 </TouchableOpacity>
 
                 <View style={styles.galleryDots}>
@@ -117,7 +118,8 @@ export default function ProductDetailScreen() {
                         )}
                         {product.isLastMinuteOk && (
                             <View style={styles.expressBadge}>
-                                <Text style={styles.expressBadgeText}>⚡ Express</Text>
+                                <Feather name="zap" size={11} color={Colors.gold} />
+                                <Text style={styles.expressBadgeText}>Express</Text>
                             </View>
                         )}
                     </View>
@@ -137,7 +139,7 @@ export default function ProductDetailScreen() {
                     <View style={styles.features}>
                         {['Artisanal & local', 'Livraison suivie', 'Satisfait ou remboursé'].map((f) => (
                             <View key={f} style={styles.featureRow}>
-                                <Text style={styles.featureIcon}>✓</Text>
+                                <Feather name="check" size={14} color={Colors.gold} />
                                 <Text style={styles.featureText}>{f}</Text>
                             </View>
                         ))}
@@ -158,7 +160,7 @@ export default function ProductDetailScreen() {
                         <View style={styles.wrapRight}>
                             <Text style={styles.wrapPrice}>+{formatPrice(PREMIUM_WRAP_PRICE_CENTS)}</Text>
                             <View style={[styles.wrapCheckbox, premiumWrap && styles.wrapCheckboxActive]}>
-                                {premiumWrap && <Text style={styles.wrapCheck}>✓</Text>}
+                                {premiumWrap && <Feather name="check" size={12} color={Colors.obsidian} />}
                             </View>
                         </View>
                     </TouchableOpacity>
@@ -172,7 +174,10 @@ export default function ProductDetailScreen() {
                     <Text style={styles.priceValue}>{formatPrice(totalPriceCents, product.currency)}</Text>
                 </View>
                 <TouchableOpacity style={styles.buyBtn} onPress={handleGiftFlow} activeOpacity={0.85}>
-                    <Text style={styles.buyBtnText}>Offrir ce cadeau  →</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Text style={styles.buyBtnText}>Offrir ce cadeau</Text>
+                        <Feather name="arrow-right" size={16} color={Colors.obsidian} />
+                    </View>
                 </TouchableOpacity>
             </View>
         </View>
@@ -198,7 +203,7 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
     productHeaderTop: { flexDirection: 'row', gap: 8, marginBottom: 12 },
     categoryBadge: { backgroundColor: Colors.stone, paddingHorizontal: 10, paddingVertical: 4, borderRadius: Radius.full },
     categoryBadgeText: { fontSize: 11, fontFamily: Typography.medium, color: Colors.muted },
-    expressBadge: { backgroundColor: Colors.gold + '22', paddingHorizontal: 10, paddingVertical: 4, borderRadius: Radius.full, borderWidth: 1, borderColor: Colors.gold + '44' },
+    expressBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.gold + '22', paddingHorizontal: 10, paddingVertical: 4, borderRadius: Radius.full, borderWidth: 1, borderColor: Colors.gold + '44' },
     expressBadgeText: { fontSize: 11, fontFamily: Typography.semibold, color: Colors.gold },
     productName: { fontSize: Typography.xl, fontFamily: Typography.bold, color: Colors.cream, letterSpacing: -0.6, lineHeight: 28, marginBottom: 4 },
     sellerName: { fontSize: Typography.sm, fontFamily: Typography.medium, color: Colors.muted, marginBottom: 10 },

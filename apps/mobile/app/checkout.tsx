@@ -105,7 +105,7 @@ export default function CheckoutScreen() {
             {/* Header */}
             <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <Text style={styles.backBtnText}>{t('common.back')}</Text>
+                    <Feather name="arrow-left" size={22} color={Colors.cream} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>{t('checkout.title')}</Text>
                 <View style={{ width: 40 }} />

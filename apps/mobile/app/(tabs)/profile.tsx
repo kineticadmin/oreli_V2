@@ -135,7 +135,7 @@ export default function ProfileScreen() {
                                         {index > 0 && <View style={styles.separator} />}
                                         <View style={styles.addressRow}>
                                             <View style={styles.cardIcon}>
-                                                <Text style={styles.cardIconText}>📍</Text>
+                                                <Feather name="map-pin" size={16} color={Colors.muted} />
                                             </View>
                                             <View style={styles.cardContent}>
                                                 <View style={styles.addressNameRow}>
@@ -178,7 +178,7 @@ export default function ProfileScreen() {
                             <View style={styles.card}>
                                 <View style={styles.cardRow}>
                                     <View style={styles.cardIcon}>
-                                        <Text style={styles.cardIconText}>📍</Text>
+                                        <Feather name="map-pin" size={16} color={Colors.muted} />
                                     </View>
                                     <View style={styles.cardContent}>
                                         <Text style={styles.cardLabel}>Aucune adresse</Text>
@@ -271,13 +271,13 @@ export default function ProfileScreen() {
                         <View style={styles.card}>
                             <TouchableOpacity style={styles.cardRow} onPress={() => router.push('/(tabs)/orders')} activeOpacity={0.7}>
                                 <View style={styles.cardIcon}>
-                                    <Text style={styles.cardIconText}>📦</Text>
+                                    <Feather name="package" size={16} color={Colors.muted} />
                                 </View>
                                 <View style={styles.cardContent}>
                                     <Text style={styles.cardLabel}>Mes commandes</Text>
                                     <Text style={styles.cardValue}>Suivi et historique</Text>
                                 </View>
-                                <Text style={{ color: Colors.muted, fontSize: 18 }}>›</Text>
+                                <Feather name="chevron-right" size={16} color={Colors.muted} />
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -288,7 +288,7 @@ export default function ProfileScreen() {
                         <View style={styles.card}>
                             <TouchableOpacity style={styles.cardRow} onPress={toggleTheme} activeOpacity={0.7}>
                                 <View style={styles.cardIcon}>
-                                    <Text style={styles.cardIconText}>{theme === 'dark' ? '☾' : '☀'}</Text>
+                                    <Feather name={theme === 'dark' ? 'moon' : 'sun'} size={16} color={Colors.muted} />
                                 </View>
                                 <View style={styles.cardContent}>
                                     <Text style={styles.cardLabel}>Thème</Text>
@@ -307,7 +307,7 @@ export default function ProfileScreen() {
                         <View style={styles.card}>
                             <View style={styles.cardRow}>
                                 <View style={styles.cardIcon}>
-                                    <Text style={styles.cardIconText}>✦</Text>
+                                    <Feather name="star" size={16} color={Colors.muted} />
                                 </View>
                                 <View style={styles.cardContent}>
                                     <Text style={styles.cardLabel}>Oreli</Text>

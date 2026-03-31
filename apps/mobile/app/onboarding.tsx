@@ -12,6 +12,7 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as SecureStore from 'expo-secure-store';
+import { Feather } from '@expo/vector-icons';
 import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius } from '@/constants/Typography';
 
@@ -100,11 +101,12 @@ export default function OnboardingScreen() {
                         {/* CTA */}
                         {isLast ? (
                             <TouchableOpacity style={styles.startBtn} onPress={goNext} activeOpacity={0.85}>
-                                <Text style={styles.startBtnText}>Commencer  →</Text>
+                                <Text style={styles.startBtnText}>Commencer</Text>
+                                <Feather name="arrow-right" size={16} color="#1A120B" />
                             </TouchableOpacity>
                         ) : (
                             <TouchableOpacity style={styles.arrowBtn} onPress={goNext} activeOpacity={0.85}>
-                                <Text style={styles.arrowBtnText}>→</Text>
+                                <Feather name="arrow-right" size={20} color="#FFFFFF" />
                             </TouchableOpacity>
                         )}
                     </View>

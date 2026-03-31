@@ -190,7 +190,8 @@ export default function HomeScreen() {
                                                 >
                                                     {item.isLastMinuteOk && (
                                                         <View style={styles.heroBadge}>
-                                                            <Text style={styles.heroBadgeText}>⚡ Livraison rapide</Text>
+                                                            <Feather name="zap" size={10} color="#FFFFFF" />
+                                                            <Text style={styles.heroBadgeText}>Livraison rapide</Text>
                                                         </View>
                                                     )}
                                                     <Text style={styles.heroTitle} numberOfLines={2}>{item.title}</Text>
@@ -274,7 +275,7 @@ export default function HomeScreen() {
                     <View style={styles.sectionHeaderRow}>
                         <Text style={styles.sectionTitle}>Tes proches</Text>
                         <TouchableOpacity onPress={() => router.push('/(tabs)/close' as never)}>
-                            <Text style={styles.seeAll}>Voir »</Text>
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}><Text style={styles.seeAll}>Voir tout</Text><Feather name="chevron-right" size={14} color={Colors.muted} /></View>
                         </TouchableOpacity>
                     </View>
 
@@ -325,7 +326,7 @@ export default function HomeScreen() {
                         <View style={styles.sectionHeaderRow}>
                             <Text style={styles.sectionTitle}>Sélection du moment</Text>
                             <TouchableOpacity onPress={() => router.push('/(tabs)/gifts')}>
-                                <Text style={styles.seeAll}>Voir tout »</Text>
+                                <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}><Text style={styles.seeAll}>Voir tout</Text><Feather name="chevron-right" size={14} color={Colors.muted} /></View>
                             </TouchableOpacity>
                         </View>
 
@@ -350,7 +351,8 @@ export default function HomeScreen() {
                                             )}
                                             {product.isLastMinuteOk && (
                                                 <View style={styles.lastMinuteBadge}>
-                                                    <Text style={styles.lastMinuteBadgeText}>⚡ Rapide</Text>
+                                                    <Feather name="zap" size={10} color={Colors.goldLight} />
+                                                    <Text style={styles.lastMinuteBadgeText}>Rapide</Text>
                                                 </View>
                                             )}
                                         </View>
@@ -400,7 +402,7 @@ export default function HomeScreen() {
 }
 
 const createStyles = (Colors: ThemeColors) => StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.obsidian },
+    // container: { flex: 1, backgroundColor: Colors.obsidian },
     header: {
         flexDirection: 'row',
         alignItems: 'flex-start',
@@ -515,6 +517,9 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
         gap: 6,
     },
     heroBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
         alignSelf: 'flex-start',
         backgroundColor: Colors.gold,
         paddingHorizontal: 10,
@@ -647,6 +652,9 @@ const createStyles = (Colors: ThemeColors) => StyleSheet.create({
         justifyContent: 'center',
     },
     lastMinuteBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
         position: 'absolute',
         top: 8,
         left: 8,

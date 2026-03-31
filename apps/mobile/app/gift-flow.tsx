@@ -26,7 +26,7 @@ function TypingIndicator({ Colors }: { Colors: ThemeColors }) {
     return (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: Spacing.xl, paddingBottom: Spacing.md }}>
             <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.gold, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: 16 }}>✦</Text>
+                <Feather name="gift" size={16} color={Colors.obsidian} />
             </View>
             <View style={{ backgroundColor: Colors.charcoal, borderRadius: Radius.xl, borderWidth: 1, borderColor: Colors.warm, paddingHorizontal: 14, paddingVertical: 10, flexDirection: 'row', gap: 4 }}>
                 {[0, 1, 2].map((dotIndex) => (
@@ -50,7 +50,7 @@ function ProductCard({ product, Colors, styles }: { product: RecommendedProduct;
             <View style={styles.productImageBox}>
                 <Feather name="gift" size={28} color={Colors.cream} />
                 <View style={styles.scoreBadge}>
-                    <Text style={styles.scoreBadgeText}>✦ {Math.round(product.score * 100)}%</Text>
+                    <Text style={styles.scoreBadgeText}>{Math.round(product.score * 100)}%</Text>
                 </View>
             </View>
             <View style={styles.productInfo}>
@@ -127,7 +127,7 @@ export default function GiftFlowScreen() {
             <View style={[styles.messageRow, isOreliMessage ? styles.messageRowOreli : styles.messageRowUser]}>
                 {isOreliMessage && (
                     <View style={styles.oreliAvatar}>
-                        <Text style={styles.oreliAvatarText}>✦</Text>
+                        <Feather name="gift" size={12} color={Colors.obsidian} />
                     </View>
                 )}
                 <View style={[styles.bubble, isOreliMessage ? styles.bubbleOreli : styles.bubbleUser]}>
@@ -191,7 +191,7 @@ export default function GiftFlowScreen() {
                 </TouchableOpacity>
                 <View style={styles.headerCenter}>
                     <View style={styles.headerAvatar}>
-                        <Text style={styles.headerAvatarText}>✦</Text>
+                        <Feather name="gift" size={14} color={Colors.obsidian} />
                     </View>
                     <Text style={styles.headerTitle}>Oreli</Text>
                 </View>

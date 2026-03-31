@@ -16,6 +16,7 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
 import { useThemeColors, ThemeColors } from '@/constants/Colors';
 import { Typography, Spacing, Radius } from '@/constants/Typography';
 import { useCreateRelationship } from '@/hooks/useRelationships';
@@ -133,7 +134,7 @@ export default function AddCloseOneScreen() {
             {/* Header */}
             <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn} hitSlop={12}>
-                    <Text style={styles.closeBtnText}>✕</Text>
+                    <Feather name="x" size={20} color={Colors.muted} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Ajouter un proche</Text>
                 <View style={{ width: 40 }} />
@@ -159,7 +160,7 @@ export default function AddCloseOneScreen() {
                             </View>
                         )}
                         <View style={styles.avatarEditBadge}>
-                            <Text style={styles.avatarEditIcon}>📷</Text>
+                            <Feather name="camera" size={13} color={Colors.obsidian} />
                         </View>
                     </TouchableOpacity>
                     <Text style={styles.avatarHint}>Ajouter une photo</Text>
@@ -217,7 +218,7 @@ export default function AddCloseOneScreen() {
                         </Text>
                         {birthday && (
                             <TouchableOpacity onPress={() => setBirthday(null)} hitSlop={10}>
-                                <Text style={styles.clearDate}>✕</Text>
+                                <Feather name="x" size={14} color={Colors.muted} />
                             </TouchableOpacity>
                         )}
                     </TouchableOpacity>
